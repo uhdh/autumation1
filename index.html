@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>apt_review.xlsx - Excel</title>
+<style>
+  :root{
+    --excel-green:#107c41;
+    --excel-green-dark:#0c5e31;
+    --ribbon-bg:#f3f2f1;
+    --sheet-bg:#ffffff;
+    --grid-line:#d4d4d4;
+    --header-bg:#f3f2f1;
+    --text:#1a1a1a;
+    --muted:#6b6b6b;
+    --up:#c00000;
+    --cancel:#999;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Malgun Gothic","맑은 고딕",sans-serif;
+    background:#e9e9e9;
+    color:var(--text);
+    font-size:13px;
+  }
+  .titlebar{
+    background:var(--excel-green);
+    color:#fff;
+    padding:6px 14px;
+    font-size:13px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .titlebar .icon{
+    width:16px;height:16px;background:#fff;border-radius:2px;
+    display:inline-flex;align-items:center;justify-content:center;
+    color:var(--excel-green);font-weight:bold;font-size:10px;
+  }
+  .ribbon{
+    background:var(--ribbon-bg);
+    border-bottom:1px solid var(--grid-line);
+    padding:0 10px;
+  }
+  .ribbon-tabs{
+    display:flex;
+    gap:18px;
+    font-size:12px;
+    padding-top:4px;
+  }
+  .ribbon-tabs span{
+    padding:6px 4px;
+    cursor:default;
+    color:var(--muted);
+  }
+  .ribbon-tabs span.active{
+    color:var(--excel-green-dark);
+    font-weight:bold;
+    border-bottom:2px solid var(--excel-green);
+  }
+  .ribbon-body{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:6px 4px 8px;
+    border-top:1px solid #fff;
+    overflow-x:auto;
+  }
+  .ribbon-group{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    padding:2px 10px;
+    border-right:1px solid var(--grid-line);
+    min-width:fit-content;
+  }
+  .ribbon-group .controls{
+    display:flex;
+    gap:6px;
+    align-items:center;
+  }
+  .ribbon-btn{
+    background:#fff;
+    border:1px solid var(--grid-line);
+    border-radius:3px;
+    padding:4px 8px;
+    font-size:11px;
+    color:var(--text);
+    cursor:pointer;
+  }
+  .ribbon-btn:hover{ background:#e6f2ec; border-color:var(--excel-green); }
+  .ribbon-label{
+    font-size:10px;
+    color:var(--muted);
+  }
+  select.ribbon-select{
+    font-size:11px;
+    padding:3px 4px;
+    border:1px solid var(--grid-line);
+    border-radius:3px;
+    background:#fff;
+  }
+  .formula-bar{
+    display:flex;
+    align-items:center;
+    background:#fff;
+    border-bottom:1px solid var(--grid-line);
+    padding:4px 8px;
+    gap:8px;
+    font-size:12px;
+  }
+  .name-box{
+    border:1px solid var(--grid-line);
+    padding:3px 8px;
+    width:60px;
+    background:#fff;
+    text-align:center;
+    color:var(--muted);
+  }
+  .fx-icon{ color:var(--muted); font-style:italic; padding:0 4px;}
+  .formula-input{
+    flex:1;
+    border:none;
+    outline:none;
+    padding:4px 6px;
+    color:#444;
+  }
+  .note{
+    font-size:11px;
+    color:var(--muted);
+    padding:2px 10px 6px;
+  }
+
+  /* 좌/우 분할 시트 레이아웃 */
+  .split-sheets{
+    display:flex;
+    gap:1px;
+    background:var(--grid-line);
+    height:60vh;
+    min-height:380px;
+  }
+  .sheet-pane{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    background:var(--sheet-bg);
+    min-width:0;
+  }
+  .pane-tab{
+    background:var(--header-bg);
+    color:var(--excel-green-dark);
+    font-weight:bold;
+    font-size:12px;
+    padding:6px 10px;
+    border-bottom:2px solid var(--excel-green);
+  }
+  .pane-scroll{
+    overflow:auto;
+    flex:1;
+  }
+  table.grid{
+    border-collapse:collapse;
+    width:100%;
+    table-layout:fixed;
+  }
+  table.grid th, table.grid td{
+    border:1px solid var(--grid-line);
+    padding:5px 6px;
+    font-size:12px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  table.grid thead th{
+    background:var(--header-bg);
+    color:var(--muted);
+    font-weight:normal;
+    text-align:center;
+    position:sticky;
+    top:0;
+    z-index:2;
+  }
+  table.grid tbody th{
+    background:var(--header-bg);
+    color:var(--muted);
+    font-weight:normal;
+    text-align:center;
+    position:sticky;
+    left:0;
+  }
+  .col-row1 th{ background:var(--excel-green); color:#fff; font-weight:bold; text-align:left; }
+  .amt-up{ color:var(--up); font-weight:bold; }
+  .cancelled{ color:var(--cancel); text-decoration:line-through; }
+  .pyeong{ color:var(--muted); font-size:11px; }
+
+  .status-bar{
+    background:var(--excel-green);
+    color:#fff;
+    font-size:11px;
+    padding:4px 14px;
+    display:flex;
+    justify-content:space-between;
+  }
+
+  @media (max-width:760px){
+    .split-sheets{ flex-direction:column; height:auto; }
+    .sheet-pane{ height:50vh; min-height:280px; }
+    .ribbon-body{ gap:8px; }
+    .ribbon-group{ padding:2px 6px; }
+    table.grid th, table.grid td{ font-size:11px; padding:4px 5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <span class="icon">X</span>
+  apt_review.xlsx - Excel
+</div>
+
+<div class="ribbon">
+  <div class="ribbon-tabs">
+    <span class="active">홈</span><span>삽입</span><span>페이지 레이아웃</span><span>수식</span><span>데이터</span><span>검토</span><span>보기</span>
+  </div>
+  <div class="ribbon-body">
+    <div class="ribbon-group">
+      <div class="controls">
+        <label class="ribbon-label">지역</label>
+        <select class="ribbon-select" id="lawdSelect"></select>
+        <label class="ribbon-label">계약월</label>
+        <select class="ribbon-select" id="ymdSelect"></select>
+        <span class="ribbon-btn" id="refreshBtn">새로고침</span>
+      </div>
+      <span class="ribbon-label">실거래가 조회</span>
+    </div>
+    <div class="ribbon-group">
+      <div class="controls">
+        <span class="ribbon-btn" id="addWatchBtn">관심단지 추가</span>
+      </div>
+      <span class="ribbon-label">관심단지 관리</span>
+    </div>
+  </div>
+</div>
+
+<div class="formula-bar">
+  <div class="name-box">A1</div>
+  <div class="fx-icon">fx</div>
+  <input class="formula-input" id="formulaInput" readonly value="=APTPRICE(LAWD_CD,DEAL_YMD)">
+</div>
+<div class="note" id="statusNote">데이터 조회 중...</div>
+
+<div class="split-sheets">
+  <div class="sheet-pane">
+    <div class="pane-tab">관심단지</div>
+    <div class="pane-scroll" id="watchArea"></div>
+  </div>
+  <div class="sheet-pane">
+    <div class="pane-tab">실거래 속보</div>
+    <div class="pane-scroll" id="feedArea"></div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span id="statusLeft">준비</span>
+  <span id="statusRight">국토교통부 실거래가 공개시스템 기준 · 1일 1회 갱신</span>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// 서울 25개구 LAWD_CD 매핑 (국토교통부 법정동코드 기준 추출)
+// ────────────────────────────────────────────────
+const SEOUL_GU = [
+  {lawd_cd:"11110", name:"종로구"}, {lawd_cd:"11140", name:"중구"},
+  {lawd_cd:"11170", name:"용산구"}, {lawd_cd:"11200", name:"성동구"},
+  {lawd_cd:"11215", name:"광진구"}, {lawd_cd:"11230", name:"동대문구"},
+  {lawd_cd:"11260", name:"중랑구"}, {lawd_cd:"11290", name:"성북구"},
+  {lawd_cd:"11305", name:"강북구"}, {lawd_cd:"11320", name:"도봉구"},
+  {lawd_cd:"11350", name:"노원구"}, {lawd_cd:"11380", name:"은평구"},
+  {lawd_cd:"11410", name:"서대문구"}, {lawd_cd:"11440", name:"마포구"},
+  {lawd_cd:"11470", name:"양천구"}, {lawd_cd:"11500", name:"강서구"},
+  {lawd_cd:"11530", name:"구로구"}, {lawd_cd:"11545", name:"금천구"},
+  {lawd_cd:"11560", name:"영등포구"}, {lawd_cd:"11590", name:"동작구"},
+  {lawd_cd:"11620", name:"관악구"}, {lawd_cd:"11650", name:"서초구"},
+  {lawd_cd:"11680", name:"강남구"}, {lawd_cd:"11710", name:"송파구"},
+  {lawd_cd:"11740", name:"강동구"},
+];
+
+// ────────────────────────────────────────────────
+// 샘플 데이터 (2026-06-30 강남구 11680 / 202605 실제 API 호출 결과 일부 기반)
+// 실제 배포 시 /api/apt-trade?lawdCd=...&dealYmd=... 호출로 대체됨
+// ────────────────────────────────────────────────
+const SAMPLE_ITEMS = [
+  {aptNm:"샘터마을", umdNm:"일원동", excluUseAr:152.7, dealYear:"2026", dealMonth:"5", dealDay:"30", dealAmountManwon:330000, floor:"4", buildYear:"1994", dealingGbn:"중개거래", isCancelled:false},
+  {aptNm:"개포래미안포레스트", umdNm:"개포동", excluUseAr:59.92, dealYear:"2026", dealMonth:"5", dealDay:"29", dealAmountManwon:260500, floor:"4", buildYear:"2020", dealingGbn:"중개거래", isCancelled:false},
+  {aptNm:"삼성동중앙하이츠빌리지", umdNm:"삼성동", excluUseAr:59.98, dealYear:"2026", dealMonth:"5", dealDay:"30", dealAmountManwon:256000, floor:"19", buildYear:"2004", dealingGbn:"중개거래", isCancelled:false},
+  {aptNm:"개포더샵트리에", umdNm:"개포동", excluUseAr:105.8244, dealYear:"2026", dealMonth:"5", dealDay:"27", dealAmountManwon:275000, floor:"4", buildYear:"2021", dealingGbn:"중개거래", isCancelled:false},
+  {aptNm:"개포우성2", umdNm:"대치동", excluUseAr:84.69, dealYear:"2026", dealMonth:"5", dealDay:"28", dealAmountManwon:390000, floor:"10", buildYear:"1984", dealingGbn:"중개거래", isCancelled:false},
+];
+
+// 관심단지 등록은 로컬스토리지에 저장 (기획문서 원칙: 로그인 없이 사용)
+const WATCH_KEY = "apt_review_watchlist";
+function loadWatchlist(){
+  try{ return JSON.parse(localStorage.getItem(WATCH_KEY)) || ["개포래미안포레스트", "샘터마을"]; }
+  catch(e){ return ["개포래미안포레스트", "샘터마을"]; }
+}
+function saveWatchlist(list){
+  localStorage.setItem(WATCH_KEY, JSON.stringify(list));
+}
+
+let currentItems = SAMPLE_ITEMS;
+let usingLiveData = false;
+
+function fmtAmount(manwon){
+  if(manwon == null) return "-";
+  const eok = Math.floor(manwon / 10000);
+  const rest = manwon % 10000;
+  if(eok > 0) return rest > 0 ? `${eok}억 ${rest.toLocaleString()}` : `${eok}억`;
+  return manwon.toLocaleString();
+}
+
+// 전용면적(㎡) → 평수 환산 (1평 = 3.3058㎡)
+function fmtPyeong(sqm){
+  if(sqm == null) return "";
+  return (sqm / 3.3058).toFixed(1) + "평";
+}
+
+function renderWatchSheet(){
+  const watchlist = loadWatchlist();
+  const watched = currentItems.filter(it => watchlist.includes(it.aptNm));
+  const rows = watched.length ? watched : currentItems.slice(0,3);
+
+  let html = `<table class="grid">
+    <thead>
+      <tr class="col-row1">
+        <th style="width:30px"></th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+      </tr>
+      <tr>
+        <th></th><th>단지명</th><th>법정동</th><th>전용면적</th><th>거래일</th><th>거래금액</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  rows.forEach((it, i)=>{
+    const cls = it.isCancelled ? "cancelled" : "";
+    html += `<tr>
+      <th>${i+2}</th>
+      <td class="${cls}">${it.aptNm}</td>
+      <td class="${cls}">${it.umdNm}</td>
+      <td class="${cls}">${it.excluUseAr ?? "-"}㎡ <span class="pyeong">(${fmtPyeong(it.excluUseAr)})</span></td>
+      <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
+      <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
+    </tr>`;
+  });
+  for(let i=rows.length; i<8; i++){
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  return html;
+}
+
+function renderFeedSheet(){
+  const sorted = [...currentItems].sort((a,b)=>{
+    const da = `${a.dealYear}${String(a.dealMonth).padStart(2,"0")}${String(a.dealDay).padStart(2,"0")}`;
+    const db = `${b.dealYear}${String(b.dealMonth).padStart(2,"0")}${String(b.dealDay).padStart(2,"0")}`;
+    return db.localeCompare(da);
+  });
+
+  let html = `<table class="grid">
+    <thead>
+      <tr class="col-row1">
+        <th style="width:30px"></th>
+        <th>A</th><th>B</th><th>C</th><th>D</th>
+      </tr>
+      <tr>
+        <th></th><th>거래일</th><th>지역</th><th>단지명</th><th>면적/금액</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  sorted.forEach((it, i)=>{
+    const cls = it.isCancelled ? "cancelled" : "";
+    const note = it.isCancelled ? " · 해제(취소)" : "";
+    html += `<tr>
+      <th>${i+2}</th>
+      <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
+      <td class="${cls}">${it.umdNm}</td>
+      <td class="${cls}">${it.aptNm} 신고${note}</td>
+      <td class="${cls}">${it.excluUseAr}㎡(${fmtPyeong(it.excluUseAr)}) / ${fmtAmount(it.dealAmountManwon)}</td>
+    </tr>`;
+  });
+  for(let i=sorted.length; i<8; i++){
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  return html;
+}
+
+function render(){
+  document.getElementById("watchArea").innerHTML = renderWatchSheet();
+  document.getElementById("feedArea").innerHTML = renderFeedSheet();
+  document.getElementById("statusLeft").textContent = usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)";
+}
+
+function populateSelects(){
+  const lawdSel = document.getElementById("lawdSelect");
+  SEOUL_GU.forEach(g=>{
+    const opt = document.createElement("option");
+    opt.value = g.lawd_cd;
+    opt.textContent = g.name;
+    if(g.lawd_cd === "11680") opt.selected = true;
+    lawdSel.appendChild(opt);
+  });
+
+  const ymdSel = document.getElementById("ymdSelect");
+  const base = new Date(2026, 5, 30); // 프로토타입 기준일: 2026-06-30
+  for(let i=0; i<6; i++){
+    const d = new Date(base.getFullYear(), base.getMonth()-i, 1);
+    const val = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}`;
+    const opt = document.createElement("option");
+    opt.value = val;
+    opt.textContent = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`;
+    ymdSel.appendChild(opt);
+  }
+}
+
+async function fetchLiveData(lawdCd, dealYmd){
+  document.getElementById("statusNote").textContent = "데이터 조회 중...";
+  try{
+    const res = await fetch(`/api/apt-trade?lawdCd=${lawdCd}&dealYmd=${dealYmd}`);
+    if(!res.ok) throw new Error("API 응답 오류");
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    currentItems = data.items;
+    usingLiveData = true;
+    const guName = SEOUL_GU.find(g=>g.lawd_cd===lawdCd)?.name || lawdCd;
+    document.getElementById("statusNote").textContent = `${guName} · ${dealYmd} · ${data.count}건 (실시간)`;
+  }catch(e){
+    // 백엔드 프록시가 아직 배포되지 않은 프로토타입 환경 → 샘플 데이터로 대체
+    currentItems = SAMPLE_ITEMS;
+    usingLiveData = false;
+    document.getElementById("statusNote").textContent = "백엔드 프록시 미연결 — 강남구 2026.05 샘플 데이터로 표시 중입니다.";
+  }
+  render();
+}
+
+document.getElementById("refreshBtn").addEventListener("click", ()=>{
+  const lawdCd = document.getElementById("lawdSelect").value;
+  const dealYmd = document.getElementById("ymdSelect").value;
+  fetchLiveData(lawdCd, dealYmd);
+});
+
+document.getElementById("addWatchBtn").addEventListener("click", ()=>{
+  const name = prompt("관심단지로 등록할 단지명을 입력하세요 (예: 개포우성2)");
+  if(!name) return;
+  const list = loadWatchlist();
+  if(!list.includes(name)) list.push(name);
+  saveWatchlist(list);
+  render();
+});
+
+populateSelects();
+fetchLiveData(document.getElementById("lawdSelect").value, document.getElementById("ymdSelect").value);
+</script>
+</body>
+</html>
