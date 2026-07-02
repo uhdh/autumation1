@@ -196,6 +196,29 @@
   .cancelled{ color:var(--cancel); text-decoration:line-through; }
   .pyeong{ color:var(--muted); font-size:11px; }
 
+  .flagship-row td{ font-weight:bold; }
+  .flagship-badge{
+    display:inline-block;
+    background:var(--excel-green);
+    color:#fff;
+    font-size:9px;
+    font-weight:bold;
+    padding:1px 4px;
+    border-radius:2px;
+    margin-right:4px;
+    vertical-align:middle;
+  }
+  .gukpyeong-badge{
+    font-size:9px;
+    color:#b8860b;
+    font-weight:bold;
+    margin-left:2px;
+  }
+  .trend-inline{ font-weight:normal; font-size:10px; color:var(--muted); }
+  .trend-up{ color:var(--up); font-weight:bold; }
+  .trend-down{ color:#1565c0; font-weight:bold; }
+  .trend-flat{ color:var(--muted); }
+
   .status-bar{
     background:var(--excel-green);
     color:#fff;
@@ -254,7 +277,7 @@
 
 <div class="split-sheets">
   <div class="sheet-pane">
-    <div class="pane-tab">관심단지</div>
+    <div class="pane-tab">대장단지</div>
     <div class="pane-scroll" id="watchArea"></div>
   </div>
   <div class="sheet-pane">
@@ -312,50 +335,82 @@ function saveWatchlist(list){
 
 let currentItems = SAMPLE_ITEMS;
 let usingLiveData = false;
+let currentTrendDatasets = null;
 
+// 억 단위, 소수점 첫째 자리까지 (예: 215000만원 → "21.5억")
 function fmtAmount(manwon){
   if(manwon == null) return "-";
-  const eok = Math.floor(manwon / 10000);
-  const rest = manwon % 10000;
-  if(eok > 0) return rest > 0 ? `${eok}억 ${rest.toLocaleString()}` : `${eok}억`;
-  return manwon.toLocaleString();
+  const eok = Math.round(manwon / 1000) / 10;
+  return `${eok % 1 === 0 ? eok.toFixed(0) : eok.toFixed(1)}억`;
 }
 
-// 전용면적(㎡) → 평수 환산 (1평 = 3.3058㎡)
-function fmtPyeong(sqm){
-  if(sqm == null) return "";
-  return (sqm / 3.3058).toFixed(1) + "평";
+// 전용면적(㎡) → "평(㎡)" 형식 문자열. 84~86㎡는 실제 시장에서 부르는 '34평(국민평형)'으로 표기
+function fmtAreaPyeong(sqm){
+  if(sqm == null) return "-";
+  const pyeong = Math.round(sqm / 3.3058);
+  const base = `${pyeong}평(${Math.round(sqm)}㎡)`;
+  const isGukpyeong = pyeong >= 32 && pyeong <= 36;
+  return isGukpyeong ? `${base}<span class="gukpyeong-badge">국평</span>` : base;
+}
+
+// 평당가(만원) = 거래금액 ÷ (전용면적/3.3058)
+function calcPricePerPyeong(it){
+  if(!it.excluUseAr || !it.dealAmountManwon) return null;
+  const pyeong = it.excluUseAr / 3.3058;
+  return Math.round(it.dealAmountManwon / pyeong);
+}
+function fmtPricePerPyeong(it){
+  const v = calcPricePerPyeong(it);
+  return v == null ? "-" : fmtAmount(v);
+}
+
+// 대장 단지 = 조회된 데이터에 등장하는 법정동마다 거래금액 최고가 건 1개씩
+function getFlagshipsByDong(items){
+  const byDong = new Map();
+  items.forEach(it=>{
+    const cur = byDong.get(it.umdNm);
+    if(!cur || it.dealAmountManwon > cur.dealAmountManwon){
+      byDong.set(it.umdNm, it);
+    }
+  });
+  return Array.from(byDong.values());
 }
 
 function renderWatchSheet(){
   const watchlist = loadWatchlist();
-  const watched = currentItems.filter(it => watchlist.includes(it.aptNm));
-  const rows = watched.length ? watched : currentItems.slice(0,3);
+  const flagships = getFlagshipsByDong(currentItems);
+  const flagshipSet = new Set(flagships);
+  const watched = currentItems.filter(it => watchlist.includes(it.aptNm) && !flagshipSet.has(it));
+  const rest = watched.length ? watched : currentItems.filter(it => !flagshipSet.has(it)).slice(0,2);
+  const rows = [...flagships, ...rest];
 
   let html = `<table class="grid">
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th>
       </tr>
       <tr>
-        <th></th><th>단지명</th><th>법정동</th><th>전용면적</th><th>거래일</th><th>거래금액</th>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th>
       </tr>
     </thead>
     <tbody>`;
   rows.forEach((it, i)=>{
     const cls = it.isCancelled ? "cancelled" : "";
-    html += `<tr>
+    const isFlagship = flagshipSet.has(it);
+    const rowCls = isFlagship ? "flagship-row" : "";
+    const nameContent = isFlagship ? `<span class="flagship-badge">${it.umdNm}</span>${it.aptNm}` : it.aptNm;
+    const trendMarkup = isFlagship ? renderInlineTrend(getApartmentTrend(currentTrendDatasets, it.aptNm)) : "";
+    html += `<tr class="${rowCls}">
       <th>${i+2}</th>
-      <td class="${cls}">${it.aptNm}</td>
-      <td class="${cls}">${it.umdNm}</td>
-      <td class="${cls}">${it.excluUseAr ?? "-"}㎡ <span class="pyeong">(${fmtPyeong(it.excluUseAr)})</span></td>
-      <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
-      <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
+      <td class="${cls}">${nameContent}</td>
+      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}${trendMarkup}</td>
+      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
   for(let i=rows.length; i<8; i++){
-    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td></tr>`;
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
   return html;
@@ -372,10 +427,10 @@ function renderFeedSheet(){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
       </tr>
       <tr>
-        <th></th><th>거래일</th><th>지역</th><th>단지명</th><th>면적/금액</th>
+        <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th>
       </tr>
     </thead>
     <tbody>`;
@@ -385,13 +440,14 @@ function renderFeedSheet(){
     html += `<tr>
       <th>${i+2}</th>
       <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
-      <td class="${cls}">${it.umdNm}</td>
-      <td class="${cls}">${it.aptNm} 신고${note}</td>
-      <td class="${cls}">${it.excluUseAr}㎡(${fmtPyeong(it.excluUseAr)}) / ${fmtAmount(it.dealAmountManwon)}</td>
+      <td class="${cls}">${it.aptNm}${note}</td>
+      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
+      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
   for(let i=sorted.length; i<8; i++){
-    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
   return html;
@@ -450,10 +506,69 @@ async function fetchLiveData(lawdCd, dealYmd){
   render();
 }
 
-document.getElementById("refreshBtn").addEventListener("click", ()=>{
+// dealYmd(YYYYMM) 기준 monthsBack개월 이전의 YYYYMM 반환
+function getPrevYmd(dealYmd, monthsBack){
+  const y = parseInt(dealYmd.slice(0,4), 10);
+  const m = parseInt(dealYmd.slice(4,6), 10);
+  const d = new Date(y, m - 1 - monthsBack, 1);
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+
+// 특정 월의 전체 거래 목록 조회. 실패 시 빈 배열
+async function fetchMonthItems(lawdCd, ymd){
+  try{
+    const res = await fetch(`/api/apt-trade?lawdCd=${lawdCd}&dealYmd=${ymd}`);
+    if(!res.ok) return [];
+    const data = await res.json().catch(()=>null);
+    if(!data || data.error || !Array.isArray(data.items)) return [];
+    return data.items;
+  }catch(e){
+    return [];
+  }
+}
+
+// 최근 3개월(과거→현재 순)치 전체 거래 목록. 단지별 추이는 여기서 아파트명으로 걸러서 계산
+async function fetchTrendDatasets(lawdCd, dealYmd){
+  const months = [getPrevYmd(dealYmd,2), getPrevYmd(dealYmd,1), dealYmd];
+  const itemsByMonth = await Promise.all(months.map(ym => fetchMonthItems(lawdCd, ym)));
+  return months.map((ym, i)=> ({ ymd: ym, items: itemsByMonth[i] }));
+}
+
+// 특정 단지(aptNm)의 최근 3개월 평균 거래금액 추이
+function getApartmentTrend(datasets, aptNm){
+  if(!datasets) return null;
+  return datasets.map(({ymd, items})=>{
+    const matches = items.filter(it => it.aptNm === aptNm);
+    if(!matches.length) return { ymd, avg: null };
+    const sum = matches.reduce((s, it)=> s + (it.dealAmountManwon || 0), 0);
+    return { ymd, avg: Math.round(sum / matches.length) };
+  });
+}
+
+function renderInlineTrend(trend){
+  if(!trend || trend.every(t => t.avg == null)) return "";
+  const parts = trend.map((t, i)=>{
+    const label = t.avg != null ? fmtAmount(t.avg) : "-";
+    let arrow = "";
+    if(i > 0){
+      const prev = trend[i-1].avg;
+      if(prev != null && t.avg != null){
+        if(t.avg > prev) arrow = `<span class="trend-up">▲</span> `;
+        else if(t.avg < prev) arrow = `<span class="trend-down">▼</span> `;
+        else arrow = `<span class="trend-flat">-</span> `;
+      }
+    }
+    return `${arrow}${label}`;
+  }).join(" → ");
+  return ` <span class="trend-inline">(${parts})</span>`;
+}
+
+document.getElementById("refreshBtn").addEventListener("click", async ()=>{
   const lawdCd = document.getElementById("lawdSelect").value;
   const dealYmd = document.getElementById("ymdSelect").value;
-  fetchLiveData(lawdCd, dealYmd);
+  await fetchLiveData(lawdCd, dealYmd);
+  currentTrendDatasets = await fetchTrendDatasets(lawdCd, dealYmd);
+  render();
 });
 
 document.getElementById("addWatchBtn").addEventListener("click", ()=>{
