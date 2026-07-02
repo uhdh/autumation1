@@ -41,7 +41,10 @@ export async function onRequestGet(context) {
 
   let xmlText;
   try {
-    const apiRes = await fetch(apiUrl);
+    // User-Agent 헤더가 없으면 공공데이터포털 WAF가 요청을 차단(400 Request Blocked)하므로 필수로 지정
+    const apiRes = await fetch(apiUrl, {
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; excelzip-apt-review/1.0)" },
+    });
     xmlText = await apiRes.text();
   } catch (err) {
     return jsonResponse({ error: "실거래가 API 호출 실패", detail: String(err) }, 502);
