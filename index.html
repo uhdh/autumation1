@@ -228,6 +228,67 @@
     justify-content:space-between;
   }
 
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.35);
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal-box{
+    background:#fff;
+    border-radius:4px;
+    width:320px;
+    max-width:90vw;
+    padding:14px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.25);
+  }
+  .modal-title{
+    font-weight:bold;
+    font-size:13px;
+    margin-bottom:8px;
+    color:var(--excel-green-dark);
+  }
+  .modal-input{
+    width:100%;
+    padding:6px 8px;
+    border:1px solid var(--grid-line);
+    border-radius:3px;
+    font-size:12px;
+    box-sizing:border-box;
+  }
+  .modal-results{
+    margin-top:8px;
+    max-height:220px;
+    overflow:auto;
+    border:1px solid var(--grid-line);
+    border-radius:3px;
+  }
+  .modal-result-item{
+    padding:6px 8px;
+    font-size:12px;
+    cursor:pointer;
+    border-bottom:1px solid var(--grid-line);
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+  }
+  .modal-result-item:last-child{ border-bottom:none; }
+  .modal-result-item:hover{ background:#e6f2ec; }
+  .modal-result-empty{
+    padding:10px 8px;
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+  }
+  .modal-actions{
+    margin-top:10px;
+    text-align:right;
+  }
+
   @media (max-width:760px){
     .split-sheets{ flex-direction:column; height:auto; }
     .sheet-pane{ height:50vh; min-height:280px; }
@@ -279,6 +340,8 @@
   <div class="sheet-pane">
     <div class="pane-tab">대장단지</div>
     <div class="pane-scroll" id="watchArea"></div>
+    <div class="pane-tab">관심단지</div>
+    <div class="pane-scroll" id="watchlistArea"></div>
   </div>
   <div class="sheet-pane">
     <div class="pane-tab">실거래 속보</div>
@@ -289,6 +352,17 @@
 <div class="status-bar">
   <span id="statusLeft">준비</span>
   <span id="statusRight">국토교통부 실거래가 공개시스템 기준 · 1일 1회 갱신</span>
+</div>
+
+<div class="modal-overlay" id="watchModalOverlay">
+  <div class="modal-box">
+    <div class="modal-title">관심단지 추가</div>
+    <input type="text" class="modal-input" id="watchSearchInput" placeholder="단지명을 입력하세요 (예: 개포)" autocomplete="off">
+    <div class="modal-results" id="watchSearchResults"></div>
+    <div class="modal-actions">
+      <span class="ribbon-btn" id="watchModalCloseBtn">닫기</span>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -376,13 +450,8 @@ function getFlagshipsByDong(items){
   return Array.from(byDong.values());
 }
 
-function renderWatchSheet(){
-  const watchlist = loadWatchlist();
+function renderFlagshipSheet(){
   const flagships = getFlagshipsByDong(currentItems);
-  const flagshipSet = new Set(flagships);
-  const watched = currentItems.filter(it => watchlist.includes(it.aptNm) && !flagshipSet.has(it));
-  const rest = watched.length ? watched : currentItems.filter(it => !flagshipSet.has(it)).slice(0,2);
-  const rows = [...flagships, ...rest];
 
   let html = `<table class="grid">
     <thead>
@@ -395,21 +464,50 @@ function renderWatchSheet(){
       </tr>
     </thead>
     <tbody>`;
-  rows.forEach((it, i)=>{
+  flagships.forEach((it, i)=>{
     const cls = it.isCancelled ? "cancelled" : "";
-    const isFlagship = flagshipSet.has(it);
-    const rowCls = isFlagship ? "flagship-row" : "";
-    const nameContent = isFlagship ? `<span class="flagship-badge">${it.umdNm}</span>${it.aptNm}` : it.aptNm;
-    const trendMarkup = isFlagship ? renderInlineTrend(getApartmentTrend(currentTrendDatasets, it.aptNm)) : "";
-    html += `<tr class="${rowCls}">
+    const trendMarkup = renderInlineTrend(getApartmentTrend(currentTrendDatasets, it.aptNm, it.excluUseAr));
+    html += `<tr class="flagship-row">
       <th>${i+2}</th>
-      <td class="${cls}">${nameContent}</td>
+      <td class="${cls}"><span class="flagship-badge">${it.umdNm}</span>${it.aptNm}</td>
       <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}${trendMarkup}</td>
       <td class="${cls}">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
-  for(let i=rows.length; i<8; i++){
+  for(let i=flagships.length; i<8; i++){
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  return html;
+}
+
+function renderWatchlistSheet(){
+  const watchlist = loadWatchlist();
+  const items = currentItems.filter(it => watchlist.includes(it.aptNm));
+
+  let html = `<table class="grid">
+    <thead>
+      <tr class="col-row1">
+        <th style="width:30px"></th>
+        <th>A</th><th>B</th><th>C</th><th>D</th>
+      </tr>
+      <tr>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  items.forEach((it, i)=>{
+    const cls = it.isCancelled ? "cancelled" : "";
+    html += `<tr>
+      <th>${i+2}</th>
+      <td class="${cls}">${it.aptNm}</td>
+      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
+      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
+    </tr>`;
+  });
+  for(let i=items.length; i<8; i++){
     html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
@@ -454,7 +552,8 @@ function renderFeedSheet(){
 }
 
 function render(){
-  document.getElementById("watchArea").innerHTML = renderWatchSheet();
+  document.getElementById("watchArea").innerHTML = renderFlagshipSheet();
+  document.getElementById("watchlistArea").innerHTML = renderWatchlistSheet();
   document.getElementById("feedArea").innerHTML = renderFeedSheet();
   document.getElementById("statusLeft").textContent = usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)";
 }
@@ -534,11 +633,12 @@ async function fetchTrendDatasets(lawdCd, dealYmd){
   return months.map((ym, i)=> ({ ymd: ym, items: itemsByMonth[i] }));
 }
 
-// 특정 단지(aptNm)의 최근 3개월 평균 거래금액 추이
-function getApartmentTrend(datasets, aptNm){
+// 특정 단지(aptNm)의 동일 평형(excluUseAr 기준) 최근 3개월 평균 거래금액 추이
+function getApartmentTrend(datasets, aptNm, excluUseAr){
   if(!datasets) return null;
+  const targetPyeong = Math.round(excluUseAr / 3.3058);
   return datasets.map(({ymd, items})=>{
-    const matches = items.filter(it => it.aptNm === aptNm);
+    const matches = items.filter(it => it.aptNm === aptNm && Math.round(it.excluUseAr / 3.3058) === targetPyeong);
     if(!matches.length) return { ymd, avg: null };
     const sum = matches.reduce((s, it)=> s + (it.dealAmountManwon || 0), 0);
     return { ymd, avg: Math.round(sum / matches.length) };
@@ -571,13 +671,52 @@ document.getElementById("refreshBtn").addEventListener("click", async ()=>{
   render();
 });
 
-document.getElementById("addWatchBtn").addEventListener("click", ()=>{
-  const name = prompt("관심단지로 등록할 단지명을 입력하세요 (예: 개포우성2)");
-  if(!name) return;
+// 현재 조회된 데이터(currentItems) 내에서만 단지명 검색 (추가 API 호출 없음)
+function renderWatchSearchResults(query){
+  const resultsEl = document.getElementById("watchSearchResults");
+  const q = query.trim();
+  const matches = q ? currentItems.filter(it => it.aptNm.includes(q)) : currentItems;
+  const seen = new Set();
+  const uniqueMatches = matches.filter(it => seen.has(it.aptNm) ? false : (seen.add(it.aptNm), true));
+
+  if(!uniqueMatches.length){
+    resultsEl.innerHTML = `<div class="modal-result-empty">일치하는 단지가 없습니다 (현재 조회된 지역·계약월 기준)</div>`;
+    return;
+  }
+  resultsEl.innerHTML = uniqueMatches.map(it =>
+    `<div class="modal-result-item" data-aptnm="${it.aptNm}"><span>${it.aptNm}</span><span class="pyeong">${it.umdNm}</span></div>`
+  ).join("");
+}
+
+function openWatchModal(){
+  document.getElementById("watchModalOverlay").classList.add("open");
+  const input = document.getElementById("watchSearchInput");
+  input.value = "";
+  renderWatchSearchResults("");
+  input.focus();
+}
+
+function closeWatchModal(){
+  document.getElementById("watchModalOverlay").classList.remove("open");
+}
+
+document.getElementById("addWatchBtn").addEventListener("click", openWatchModal);
+document.getElementById("watchModalCloseBtn").addEventListener("click", closeWatchModal);
+document.getElementById("watchModalOverlay").addEventListener("click", (e)=>{
+  if(e.target.id === "watchModalOverlay") closeWatchModal();
+});
+document.getElementById("watchSearchInput").addEventListener("input", (e)=>{
+  renderWatchSearchResults(e.target.value);
+});
+document.getElementById("watchSearchResults").addEventListener("click", (e)=>{
+  const item = e.target.closest(".modal-result-item");
+  if(!item) return;
+  const name = item.dataset.aptnm;
   const list = loadWatchlist();
   if(!list.includes(name)) list.push(name);
   saveWatchlist(list);
   render();
+  closeWatchModal();
 });
 
 populateSelects();
