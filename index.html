@@ -429,18 +429,23 @@ async function fetchLiveData(lawdCd, dealYmd){
   document.getElementById("statusNote").textContent = "데이터 조회 중...";
   try{
     const res = await fetch(`/api/apt-trade?lawdCd=${lawdCd}&dealYmd=${dealYmd}`);
-    if(!res.ok) throw new Error("API 응답 오류");
-    const data = await res.json();
+    if(res.status === 404){
+      throw new Error("백엔드 프록시 미연결 — /api/apt-trade 함수가 배포되지 않았습니다.");
+    }
+    const data = await res.json().catch(()=>{
+      throw new Error(`API 응답 오류 (HTTP ${res.status}) — 응답이 JSON 형식이 아닙니다.`);
+    });
     if(data.error) throw new Error(data.error);
+    if(!res.ok) throw new Error(`API 응답 오류 (HTTP ${res.status})`);
     currentItems = data.items;
     usingLiveData = true;
     const guName = SEOUL_GU.find(g=>g.lawd_cd===lawdCd)?.name || lawdCd;
     document.getElementById("statusNote").textContent = `${guName} · ${dealYmd} · ${data.count}건 (실시간)`;
   }catch(e){
-    // 백엔드 프록시가 아직 배포되지 않은 프로토타입 환경 → 샘플 데이터로 대체
+    // 실제 원인(환경변수 누락, API 오류 등)을 그대로 노출해 디버깅이 가능하도록 함
     currentItems = SAMPLE_ITEMS;
     usingLiveData = false;
-    document.getElementById("statusNote").textContent = "백엔드 프록시 미연결 — 강남구 2026.05 샘플 데이터로 표시 중입니다.";
+    document.getElementById("statusNote").textContent = `샘플 데이터로 표시 중 — ${e.message}`;
   }
   render();
 }
