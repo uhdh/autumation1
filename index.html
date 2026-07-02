@@ -214,7 +214,9 @@
     font-weight:bold;
     margin-left:2px;
   }
+  .cell-sm{ font-size:10px; }
   .trend-inline{ font-weight:normal; font-size:10px; color:var(--muted); }
+  .trend-point{ cursor:help; border-bottom:1px dotted var(--muted); }
   .trend-up{ color:var(--up); font-weight:bold; }
   .trend-down{ color:#1565c0; font-weight:bold; }
   .trend-flat{ color:var(--muted); }
@@ -470,9 +472,9 @@ function renderFlagshipSheet(){
     html += `<tr class="flagship-row">
       <th>${i+2}</th>
       <td class="${cls}"><span class="flagship-badge">${it.umdNm}</span>${it.aptNm}</td>
-      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}${trendMarkup}</td>
-      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
   for(let i=flagships.length; i<8; i++){
@@ -502,9 +504,9 @@ function renderWatchlistSheet(){
     html += `<tr>
       <th>${i+2}</th>
       <td class="${cls}">${it.aptNm}</td>
-      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
-      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
   for(let i=items.length; i<8; i++){
@@ -539,9 +541,9 @@ function renderFeedSheet(){
       <th>${i+2}</th>
       <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
       <td class="${cls}">${it.aptNm}${note}</td>
-      <td class="${cls}">${fmtAreaPyeong(it.excluUseAr)}</td>
+      <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
-      <td class="${cls}">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
     </tr>`;
   });
   for(let i=sorted.length; i<8; i++){
@@ -633,32 +635,43 @@ async function fetchTrendDatasets(lawdCd, dealYmd){
   return months.map((ym, i)=> ({ ymd: ym, items: itemsByMonth[i] }));
 }
 
-// 특정 단지(aptNm)의 동일 평형(excluUseAr 기준) 최근 3개월 평균 거래금액 추이
+// 특정 단지(aptNm)의 동일 평형(excluUseAr 기준) 최근 실거래 3건 (과거→최근 순)
 function getApartmentTrend(datasets, aptNm, excluUseAr){
   if(!datasets) return null;
   const targetPyeong = Math.round(excluUseAr / 3.3058);
-  return datasets.map(({ymd, items})=>{
-    const matches = items.filter(it => it.aptNm === aptNm && Math.round(it.excluUseAr / 3.3058) === targetPyeong);
-    if(!matches.length) return { ymd, avg: null };
-    const sum = matches.reduce((s, it)=> s + (it.dealAmountManwon || 0), 0);
-    return { ymd, avg: Math.round(sum / matches.length) };
+  const merged = [];
+  datasets.forEach(({items})=>{
+    items.forEach(it=>{
+      if(it.aptNm === aptNm && Math.round(it.excluUseAr / 3.3058) === targetPyeong){
+        merged.push(it);
+      }
+    });
   });
+  merged.sort((a, b)=>{
+    const da = `${a.dealYear}${String(a.dealMonth).padStart(2,"0")}${String(a.dealDay).padStart(2,"0")}`;
+    const db = `${b.dealYear}${String(b.dealMonth).padStart(2,"0")}${String(b.dealDay).padStart(2,"0")}`;
+    return db.localeCompare(da);
+  });
+  const recent = merged.slice(0, 3).reverse();
+  if(!recent.length) return null;
+  return recent.map(it => ({
+    date: `${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}`,
+    price: it.dealAmountManwon,
+  }));
 }
 
 function renderInlineTrend(trend){
-  if(!trend || trend.every(t => t.avg == null)) return "";
+  if(!trend || !trend.length) return "";
   const parts = trend.map((t, i)=>{
-    const label = t.avg != null ? fmtAmount(t.avg) : "-";
+    const label = fmtAmount(t.price);
     let arrow = "";
     if(i > 0){
-      const prev = trend[i-1].avg;
-      if(prev != null && t.avg != null){
-        if(t.avg > prev) arrow = `<span class="trend-up">▲</span> `;
-        else if(t.avg < prev) arrow = `<span class="trend-down">▼</span> `;
-        else arrow = `<span class="trend-flat">-</span> `;
-      }
+      const prev = trend[i-1].price;
+      if(t.price > prev) arrow = `<span class="trend-up">▲</span> `;
+      else if(t.price < prev) arrow = `<span class="trend-down">▼</span> `;
+      else arrow = `<span class="trend-flat">-</span> `;
     }
-    return `${arrow}${label}`;
+    return `${arrow}<span class="trend-point" title="${t.date} 거래">${label}</span>`;
   }).join(" → ");
   return ` <span class="trend-inline">(${parts})</span>`;
 }
