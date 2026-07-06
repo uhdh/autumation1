@@ -460,10 +460,14 @@ function fmtPricePerPyeong(it){
   return v == null ? "-" : fmtAmount(v);
 }
 
-// 준공년월. 정적 단지 목록(seoul_apt_complex.json)의 사용승인일(년.월)을 사용 (RTMS 실거래가 API는 연도만 제공)
+// 연식. 정적 단지 목록(seoul_apt_complex.json)의 사용승인일(년.월)에서 연도만 뽑아 "'22년(4년차)" 형식으로 표시
 function fmtBuildYear(it){
   const buildYearMonth = currentBasisByAptNm.get(it.aptNm)?.buildYearMonth;
-  return buildYearMonth ? `${buildYearMonth.replace(".", "년 ")}월` : "-";
+  const year = buildYearMonth ? parseInt(buildYearMonth.slice(0, 4), 10) : null;
+  if(!year) return "-";
+  const shortYear = String(year).slice(2);
+  const age = new Date().getFullYear() - year;
+  return `'${shortYear}년(${age}년차)`;
 }
 
 // 세대수. 공동주택 기본정보 API(apt-complex)에서 단지명 매칭으로 조회한 값
@@ -495,7 +499,7 @@ function renderFlagshipSheet(items){
         <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
-        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>준공년월</th><th>세대수</th>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>연식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
@@ -530,7 +534,7 @@ function renderWatchlistSheet(items){
         <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
-        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>준공년월</th><th>세대수</th>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>연식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
@@ -567,7 +571,7 @@ function renderFeedSheet(items){
         <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
       </tr>
       <tr>
-        <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th><th>준공년월</th><th>세대수</th>
+        <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th><th>연식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
