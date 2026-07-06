@@ -96,13 +96,15 @@
     font-size:10px;
     color:var(--muted);
   }
-  select.ribbon-select{
+  select.ribbon-select, input.ribbon-select{
     font-size:11px;
     padding:3px 4px;
     border:1px solid var(--grid-line);
     border-radius:3px;
     background:#fff;
   }
+  input.ribbon-select{ width:56px; }
+  .ribbon-tilde{ font-size:11px; color:var(--muted); }
   .formula-bar{
     display:flex;
     align-items:center;
@@ -328,6 +330,23 @@
       </div>
       <span class="ribbon-label">관심단지 관리</span>
     </div>
+    <div class="ribbon-group">
+      <div class="controls">
+        <label class="ribbon-label">년식</label>
+        <input type="number" class="ribbon-select" id="filterYearMin" placeholder="이후">
+        <span class="ribbon-tilde">~</span>
+        <input type="number" class="ribbon-select" id="filterYearMax" placeholder="이전">
+        <label class="ribbon-label">세대수</label>
+        <input type="number" class="ribbon-select" id="filterHouseholdMin" placeholder="이상">
+        <label class="ribbon-label">금액(억)</label>
+        <input type="number" class="ribbon-select" id="filterPriceMin" placeholder="최소">
+        <span class="ribbon-tilde">~</span>
+        <input type="number" class="ribbon-select" id="filterPriceMax" placeholder="최대">
+        <span class="ribbon-btn" id="filterApplyBtn">필터 적용</span>
+        <span class="ribbon-btn" id="filterResetBtn">초기화</span>
+      </div>
+      <span class="ribbon-label">필터 (년식·세대수·금액)</span>
+    </div>
   </div>
 </div>
 
@@ -465,8 +484,8 @@ function getFlagshipsByDong(items){
   return Array.from(byDong.values());
 }
 
-function renderFlagshipSheet(){
-  const flagships = getFlagshipsByDong(currentItems);
+function renderFlagshipSheet(items){
+  const flagships = getFlagshipsByDong(items);
 
   let html = `<table class="grid">
     <thead>
@@ -499,9 +518,9 @@ function renderFlagshipSheet(){
   return html;
 }
 
-function renderWatchlistSheet(){
+function renderWatchlistSheet(items){
   const watchlist = loadWatchlist();
-  const items = currentItems.filter(it => watchlist.includes(it.aptNm));
+  items = items.filter(it => watchlist.includes(it.aptNm));
 
   let html = `<table class="grid">
     <thead>
@@ -533,8 +552,8 @@ function renderWatchlistSheet(){
   return html;
 }
 
-function renderFeedSheet(){
-  const sorted = [...currentItems].sort((a,b)=>{
+function renderFeedSheet(items){
+  const sorted = [...items].sort((a,b)=>{
     const da = `${a.dealYear}${String(a.dealMonth).padStart(2,"0")}${String(a.dealDay).padStart(2,"0")}`;
     const db = `${b.dealYear}${String(b.dealMonth).padStart(2,"0")}${String(b.dealDay).padStart(2,"0")}`;
     return db.localeCompare(da);
@@ -572,11 +591,45 @@ function renderFeedSheet(){
   return html;
 }
 
+// 년식·세대수·금액 필터 상태. null인 항목은 제약 없음
+let filterState = { yearMin:null, yearMax:null, householdMin:null, priceMin:null, priceMax:null };
+
+function isFilterActive(){
+  return Object.values(filterState).some(v => v != null);
+}
+
+// currentItems(지역·계약월 조회 + 의무관리대상 필터까지 반영된 목록)에 사용자 필터를 추가로 적용
+function getFilteredItems(){
+  return currentItems.filter(it=>{
+    if(filterState.yearMin != null){
+      const y = parseInt(it.buildYear, 10);
+      if(!y || y < filterState.yearMin) return false;
+    }
+    if(filterState.yearMax != null){
+      const y = parseInt(it.buildYear, 10);
+      if(!y || y > filterState.yearMax) return false;
+    }
+    if(filterState.householdMin != null){
+      const household = currentBasisByAptNm.get(it.aptNm)?.householdCount;
+      if(!household || household < filterState.householdMin) return false;
+    }
+    if(filterState.priceMin != null){
+      if(it.dealAmountManwon == null || it.dealAmountManwon < filterState.priceMin * 10000) return false;
+    }
+    if(filterState.priceMax != null){
+      if(it.dealAmountManwon == null || it.dealAmountManwon > filterState.priceMax * 10000) return false;
+    }
+    return true;
+  });
+}
+
 function render(){
-  document.getElementById("watchArea").innerHTML = renderFlagshipSheet();
-  document.getElementById("watchlistArea").innerHTML = renderWatchlistSheet();
-  document.getElementById("feedArea").innerHTML = renderFeedSheet();
-  document.getElementById("statusLeft").textContent = usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)";
+  const filtered = getFilteredItems();
+  document.getElementById("watchArea").innerHTML = renderFlagshipSheet(filtered);
+  document.getElementById("watchlistArea").innerHTML = renderWatchlistSheet(filtered);
+  document.getElementById("feedArea").innerHTML = renderFeedSheet(filtered);
+  const filterNote = isFilterActive() ? ` · 필터 적용 ${filtered.length}/${currentItems.length}건` : "";
+  document.getElementById("statusLeft").textContent = (usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)") + filterNote;
 }
 
 function populateSelects(){
@@ -810,6 +863,32 @@ function openWatchModal(){
 function closeWatchModal(){
   document.getElementById("watchModalOverlay").classList.remove("open");
 }
+
+const FILTER_INPUT_IDS = ["filterYearMin","filterYearMax","filterHouseholdMin","filterPriceMin","filterPriceMax"];
+
+function readFilterInputs(){
+  const num = (id) => {
+    const v = document.getElementById(id).value.trim();
+    return v === "" ? null : Number(v);
+  };
+  filterState = {
+    yearMin: num("filterYearMin"),
+    yearMax: num("filterYearMax"),
+    householdMin: num("filterHouseholdMin"),
+    priceMin: num("filterPriceMin"),
+    priceMax: num("filterPriceMax"),
+  };
+}
+
+document.getElementById("filterApplyBtn").addEventListener("click", ()=>{
+  readFilterInputs();
+  render();
+});
+document.getElementById("filterResetBtn").addEventListener("click", ()=>{
+  FILTER_INPUT_IDS.forEach(id => { document.getElementById(id).value = ""; });
+  filterState = { yearMin:null, yearMax:null, householdMin:null, priceMin:null, priceMax:null };
+  render();
+});
 
 document.getElementById("addWatchBtn").addEventListener("click", openWatchModal);
 document.getElementById("watchModalCloseBtn").addEventListener("click", closeWatchModal);
