@@ -412,6 +412,7 @@ function saveWatchlist(list){
 let currentItems = SAMPLE_ITEMS;
 let usingLiveData = false;
 let currentTrendDatasets = null;
+let currentBasisByAptNm = new Map(); // aptNm → {householdCount, useApproveDate}
 
 // 억 단위, 소수점 첫째 자리까지 (예: 215000만원 → "21.5억")
 function fmtAmount(manwon){
@@ -440,6 +441,18 @@ function fmtPricePerPyeong(it){
   return v == null ? "-" : fmtAmount(v);
 }
 
+// 준공년도(년식). RTMS 실거래가 API의 buildYear를 그대로 사용
+function fmtBuildYear(it){
+  return it.buildYear ? `${it.buildYear}년` : "-";
+}
+
+// 세대수. 공동주택 기본정보 API(apt-complex)에서 단지명 매칭으로 조회한 값
+function fmtHousehold(it){
+  const info = currentBasisByAptNm.get(it.aptNm);
+  if(!info || !info.householdCount) return "-";
+  return `${info.householdCount.toLocaleString()}세대`;
+}
+
 // 대장 단지 = 조회된 데이터에 등장하는 법정동마다 거래금액 최고가 건 1개씩
 function getFlagshipsByDong(items){
   const byDong = new Map();
@@ -459,10 +472,10 @@ function renderFlagshipSheet(){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
-        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>년식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
@@ -475,10 +488,12 @@ function renderFlagshipSheet(){
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}${trendMarkup}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtBuildYear(it)}</td>
+      <td class="${cls} cell-sm">${fmtHousehold(it)}</td>
     </tr>`;
   });
   for(let i=flagships.length; i<8; i++){
-    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
   return html;
@@ -492,10 +507,10 @@ function renderWatchlistSheet(){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
-        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th>
+        <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>년식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
@@ -507,10 +522,12 @@ function renderWatchlistSheet(){
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtBuildYear(it)}</td>
+      <td class="${cls} cell-sm">${fmtHousehold(it)}</td>
     </tr>`;
   });
   for(let i=items.length; i<8; i++){
-    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td></tr>`;
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
   return html;
@@ -527,10 +544,10 @@ function renderFeedSheet(){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
       </tr>
       <tr>
-        <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th>
+        <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th><th>년식</th><th>세대수</th>
       </tr>
     </thead>
     <tbody>`;
@@ -544,10 +561,12 @@ function renderFeedSheet(){
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
+      <td class="${cls} cell-sm">${fmtBuildYear(it)}</td>
+      <td class="${cls} cell-sm">${fmtHousehold(it)}</td>
     </tr>`;
   });
   for(let i=sorted.length; i<8; i++){
-    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td></tr>`;
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
   }
   html += `</tbody></table>`;
   return html;
@@ -676,11 +695,90 @@ function renderInlineTrend(trend){
   return ` <span class="trend-inline">(${parts})</span>`;
 }
 
+// 서울 공동주택 단지 정보(세대수·준공년도) — K-apt 단지 기본정보 스냅샷을 서울 25개구로 추려 정적 JSON으로 내장
+// (공동주택 단지 "목록" API는 활용신청이 안 되어 있어 실거래가 API 응답만으로는 kaptCode를 알 수 없음.
+//  대신 K-apt 전체 단지 엑셀(2026-07-03 기준)을 내려받아 seoul_apt_complex.json으로 미리 가공해둠)
+let seoulComplexList = null; // [{kaptCode, kaptName, gu, dong, buildYear, householdCount}]
+let seoulComplexByName = null; // 정규화된 kaptName → 후보 목록 (동명 단지 대비 배열)
+
+// 실거래가 API의 단지명에는 "지고하임(102동)", "럭키(963)"처럼 동번호·지번이 괄호로 덧붙는 경우가 있어
+// 매칭 전에 제거 (괄호 안이 숫자/쉼표/물결/하이픈 나열이거나 "숫자+동" 형태일 때만 제거해 고유 명칭 손상 방지)
+function stripDongSuffix(name){
+  return (name || "").replace(/[(（][0-9,\-~·\s]*동?[)）]\s*$/g, "");
+}
+function normalizeAptName(name){
+  return stripDongSuffix(name).replace(/[\s()（）·\-]/g, "");
+}
+
+async function loadSeoulComplexList(){
+  if(seoulComplexList) return seoulComplexList;
+  try{
+    const res = await fetch("/seoul_apt_complex.json");
+    seoulComplexList = await res.json();
+  }catch(e){
+    seoulComplexList = [];
+  }
+  seoulComplexByName = new Map();
+  seoulComplexList.forEach(c=>{
+    const key = normalizeAptName(c.kaptName);
+    if(!key) return;
+    if(!seoulComplexByName.has(key)) seoulComplexByName.set(key, []);
+    seoulComplexByName.get(key).push(c);
+  });
+  return seoulComplexList;
+}
+
+// RTMS 실거래가의 aptNm(+umdNm)을 정적 단지 목록의 kaptName(+dong)과 매칭
+// 완전일치 중 같은 동(dong)인 것을 최우선으로, 없으면 완전일치 첫 건, 그래도 없으면 부분포함으로 매칭
+function matchSeoulComplex(aptNm, umdNm){
+  if(!seoulComplexByName) return null;
+  const target = normalizeAptName(aptNm);
+  if(!target) return null;
+
+  const exact = seoulComplexByName.get(target);
+  if(exact && exact.length){
+    const sameDong = exact.find(c => c.dong === umdNm);
+    return sameDong || exact[0];
+  }
+
+  let fallback = null;
+  for(const c of seoulComplexList){
+    const cand = normalizeAptName(c.kaptName);
+    if(!cand) continue;
+    if(cand.includes(target) || target.includes(cand)){
+      fallback = c;
+      if(c.dong === umdNm) break; // 같은 동이면 더 볼 것 없이 채택
+    }
+  }
+  return fallback;
+}
+
+// currentItems에 등장하는 단지들의 세대수를 정적 목록에서 매칭해 aptNm → 기본정보 맵으로 구성
+async function loadHouseholdCounts(items){
+  await loadSeoulComplexList();
+  const map = new Map();
+  const uniqueNames = Array.from(new Set(items.map(it => it.aptNm)));
+  uniqueNames.forEach(aptNm=>{
+    const it = items.find(i => i.aptNm === aptNm);
+    const match = matchSeoulComplex(aptNm, it?.umdNm);
+    if(match) map.set(aptNm, { householdCount: match.householdCount, buildYear: match.buildYear });
+  });
+  return map;
+}
+
+// K-apt 단지 목록(seoul_apt_complex.json)은 의무관리대상 공동주택만 포함하므로,
+// 여기에 매칭되지 않는 단지(의무관리 대상 아님·소규모·오피스텔 등)는 화면에서도 제외
+function filterMandatoryManaged(items, basisMap){
+  return items.filter(it => basisMap.has(it.aptNm));
+}
+
 document.getElementById("refreshBtn").addEventListener("click", async ()=>{
   const lawdCd = document.getElementById("lawdSelect").value;
   const dealYmd = document.getElementById("ymdSelect").value;
   await fetchLiveData(lawdCd, dealYmd);
   currentTrendDatasets = await fetchTrendDatasets(lawdCd, dealYmd);
+  currentBasisByAptNm = await loadHouseholdCounts(currentItems);
+  currentItems = filterMandatoryManaged(currentItems, currentBasisByAptNm);
   render();
 });
 
@@ -733,7 +831,14 @@ document.getElementById("watchSearchResults").addEventListener("click", (e)=>{
 });
 
 populateSelects();
-fetchLiveData(document.getElementById("lawdSelect").value, document.getElementById("ymdSelect").value);
+(async ()=>{
+  const lawdCd = document.getElementById("lawdSelect").value;
+  const dealYmd = document.getElementById("ymdSelect").value;
+  await fetchLiveData(lawdCd, dealYmd);
+  currentBasisByAptNm = await loadHouseholdCounts(currentItems);
+  currentItems = filterMandatoryManaged(currentItems, currentBasisByAptNm);
+  render();
+})();
 </script>
 </body>
 </html>
