@@ -222,6 +222,8 @@
   .trend-up{ color:var(--up); font-weight:bold; }
   .trend-down{ color:#1565c0; font-weight:bold; }
   .trend-flat{ color:var(--muted); }
+  .news-link{ color:#0563c1; text-decoration:underline; cursor:pointer; }
+  .news-desc{ color:var(--muted); font-size:11px; white-space:normal; }
 
   .status-bar{
     background:var(--excel-green);
@@ -368,11 +370,15 @@
     <div class="pane-tab">실거래 속보</div>
     <div class="pane-scroll" id="feedArea"></div>
   </div>
+  <div class="sheet-pane">
+    <div class="pane-tab">부동산 뉴스</div>
+    <div class="pane-scroll" id="newsArea"></div>
+  </div>
 </div>
 
 <div class="status-bar">
   <span id="statusLeft">준비</span>
-  <span id="statusRight">국토교통부 실거래가 공개시스템 기준 · 1일 1회 갱신</span>
+  <span id="statusRight">국토교통부 실거래가 공개시스템 · 네이버 뉴스 검색 API 기준</span>
 </div>
 
 <div class="modal-overlay" id="watchModalOverlay">
@@ -418,6 +424,18 @@ const SAMPLE_ITEMS = [
   {aptNm:"개포우성2", umdNm:"대치동", excluUseAr:84.69, dealYear:"2026", dealMonth:"5", dealDay:"28", dealAmountManwon:390000, floor:"10", buildYear:"1984", dealingGbn:"중개거래", isCancelled:false},
 ];
 
+// ────────────────────────────────────────────────
+// 뉴스 샘플 데이터 (백엔드 프록시 미연결 시 폴백용)
+// 실제 배포 시 /api/apt-news?query=... 호출로 대체됨
+// ────────────────────────────────────────────────
+const SAMPLE_NEWS = [
+  {title:"강남권 재건축 단지 실거래가 다시 꿈틀", description:"규제 완화 기대감에 강남·서초 재건축 단지 위주로 매수 문의가 늘고 있다.", link:"#", pubDate:"Tue, 30 Jun 2026 09:12:00 +0900"},
+  {title:"6월 서울 아파트 거래량 전월 대비 증가", description:"국토부 실거래가 자료 기준 6월 서울 아파트 매매 거래량이 전달보다 늘었다.", link:"#", pubDate:"Mon, 29 Jun 2026 17:40:00 +0900"},
+  {title:"금리 동결에 부동산 시장 관망세 지속", description:"기준금리가 동결되면서 매수-매도자 간 눈치보기 장세가 이어지고 있다.", link:"#", pubDate:"Mon, 29 Jun 2026 08:05:00 +0900"},
+  {title:"전세가율 상승, 갭투자 다시 늘어나나", description:"일부 지역에서 전세가율이 오르며 갭투자 수요 재유입 가능성이 제기된다.", link:"#", pubDate:"Sun, 28 Jun 2026 20:33:00 +0900"},
+  {title:"정부, 하반기 주택 공급 대책 발표 예고", description:"국토교통부가 다음 달 중 하반기 주택 공급 확대 방안을 내놓을 예정이다.", link:"#", pubDate:"Sat, 27 Jun 2026 11:20:00 +0900"},
+];
+
 // 관심단지 등록은 로컬스토리지에 저장 (기획문서 원칙: 로그인 없이 사용)
 const WATCH_KEY = "apt_review_watchlist";
 function loadWatchlist(){
@@ -430,6 +448,7 @@ function saveWatchlist(list){
 
 let currentItems = SAMPLE_ITEMS;
 let usingLiveData = false;
+let currentNews = SAMPLE_NEWS;
 let currentTrendDatasets = null;
 let currentBasisByAptNm = new Map(); // aptNm → {householdCount, useApproveDate}
 
@@ -628,11 +647,62 @@ function getFilteredItems(){
   });
 }
 
+// 뉴스 API 응답(제목/요약/링크)은 신뢰할 수 없는 외부 텍스트이므로 innerHTML 삽입 전 이스케이프 필수
+function escapeHtml(str){
+  if(str == null) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// RFC822 pubDate(예: "Tue, 30 Jun 2026 09:12:00 +0900") → "06.30 09:12"
+function fmtNewsTime(pubDate){
+  const d = new Date(pubDate);
+  if(isNaN(d)) return "-";
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+  const hh = String(d.getHours()).padStart(2,"0");
+  const mi = String(d.getMinutes()).padStart(2,"0");
+  return `${mm}.${dd} ${hh}:${mi}`;
+}
+
+function renderNewsSheet(){
+  let html = `<table class="grid">
+    <thead>
+      <tr class="col-row1">
+        <th style="width:30px"></th>
+        <th>A</th><th>B</th><th>C</th>
+      </tr>
+      <tr>
+        <th></th><th style="width:80px">시각</th><th>헤드라인</th><th>요약</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  currentNews.forEach((n, i)=>{
+    const href = /^https?:\/\//i.test(n.link || "") ? n.link : "#";
+    html += `<tr>
+      <th>${i+2}</th>
+      <td>${fmtNewsTime(n.pubDate)}</td>
+      <td><a class="news-link" href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(n.title)}</a></td>
+      <td class="news-desc">${escapeHtml(n.description)}</td>
+    </tr>`;
+  });
+  for(let i=currentNews.length; i<8; i++){
+    html += `<tr><th>${i+2}</th><td></td><td></td><td></td></tr>`;
+  }
+  html += `</tbody></table>`;
+  return html;
+}
+
 function render(){
   const filtered = getFilteredItems();
   document.getElementById("watchArea").innerHTML = renderFlagshipSheet(filtered);
   document.getElementById("watchlistArea").innerHTML = renderWatchlistSheet(filtered);
   document.getElementById("feedArea").innerHTML = renderFeedSheet(filtered);
+  document.getElementById("newsArea").innerHTML = renderNewsSheet();
   const filterNote = isFilterActive() ? ` · 필터 적용 ${filtered.length}/${currentItems.length}건` : "";
   document.getElementById("statusLeft").textContent = (usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)") + filterNote;
 }
@@ -830,6 +900,27 @@ function filterMandatoryManaged(items, basisMap){
   return items.filter(it => basisMap.has(it.aptNm));
 }
 
+// 선택된 구 이름 기준으로 부동산 뉴스 조회 (예: "강남구 부동산")
+async function fetchNews(guName){
+  try{
+    const res = await fetch(`/api/apt-news?query=${encodeURIComponent(guName + " 부동산")}`);
+    const data = await res.json().catch(()=>{
+      throw new Error(`뉴스 API 응답 오류 (HTTP ${res.status})`);
+    });
+    if(data.error) throw new Error(data.error);
+    if(!res.ok) throw new Error(`뉴스 API 응답 오류 (HTTP ${res.status})`);
+    currentNews = data.items;
+  }catch(e){
+    // 백엔드 프록시(네이버 뉴스) 미연결 프로토타입 환경 → 샘플 뉴스로 대체
+    currentNews = SAMPLE_NEWS;
+  }
+}
+
+function currentGuName(){
+  const lawdSel = document.getElementById("lawdSelect");
+  return SEOUL_GU.find(g=>g.lawd_cd===lawdSel.value)?.name || "서울";
+}
+
 document.getElementById("refreshBtn").addEventListener("click", async ()=>{
   const lawdCd = document.getElementById("lawdSelect").value;
   const dealYmd = document.getElementById("ymdSelect").value;
@@ -837,6 +928,7 @@ document.getElementById("refreshBtn").addEventListener("click", async ()=>{
   currentTrendDatasets = await fetchTrendDatasets(lawdCd, dealYmd);
   currentBasisByAptNm = await loadHouseholdCounts(currentItems);
   currentItems = filterMandatoryManaged(currentItems, currentBasisByAptNm);
+  await fetchNews(currentGuName());
   render();
 });
 
@@ -921,6 +1013,7 @@ populateSelects();
   await fetchLiveData(lawdCd, dealYmd);
   currentBasisByAptNm = await loadHouseholdCounts(currentItems);
   currentItems = filterMandatoryManaged(currentItems, currentBasisByAptNm);
+  await fetchNews(currentGuName());
   render();
 })();
 </script>
