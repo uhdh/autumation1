@@ -1,0 +1,667 @@
+[
+  {
+    "kaptCode": "A10023348",
+    "kaptName": "개포자이프레지던스",
+    "gu": "강남구",
+    "dong": "개포동",
+    "namuName": "개포자이 프레지던스"
+  },
+  {
+    "kaptCode": "A13528004",
+    "kaptName": "대치미도맨션",
+    "gu": "강남구",
+    "dong": "대치동",
+    "namuName": "한보미도맨션"
+  },
+  {
+    "kaptCode": "A13583604",
+    "kaptName": "대치선경",
+    "gu": "강남구",
+    "dong": "대치동",
+    "namuName": "대치 선경아파트"
+  },
+  {
+    "kaptCode": "A13527203",
+    "kaptName": "도곡렉슬",
+    "gu": "강남구",
+    "dong": "도곡동",
+    "namuName": "도곡렉슬"
+  },
+  {
+    "kaptCode": "A13527010",
+    "kaptName": "도곡우성아파트",
+    "gu": "강남구",
+    "dong": "도곡동",
+    "namuName": "도곡우성아파트"
+  },
+  {
+    "kaptCode": "A10022859",
+    "kaptName": "디에이치퍼스티어아이파크",
+    "gu": "강남구",
+    "dong": "개포동",
+    "namuName": "디에이치 퍼스티어 아이파크"
+  },
+  {
+    "kaptCode": "A10025010",
+    "kaptName": "고덕 아르테온 아파트",
+    "gu": "강동구",
+    "dong": "상일동",
+    "namuName": "고덕 아르테온"
+  },
+  {
+    "kaptCode": "A13408003",
+    "kaptName": "고덕아이파크아파트",
+    "gu": "강동구",
+    "dong": "고덕동",
+    "namuName": "고덕아이파크"
+  },
+  {
+    "kaptCode": "A10024473",
+    "kaptName": "고덕자이 아파트",
+    "gu": "강동구",
+    "dong": "상일동",
+    "namuName": "고덕자이"
+  },
+  {
+    "kaptCode": "A10021122",
+    "kaptName": "올림픽파크포레온",
+    "gu": "강동구",
+    "dong": "둔촌동",
+    "namuName": "올림픽파크 포레온"
+  },
+  {
+    "kaptCode": "A10022233",
+    "kaptName": "등촌2차보람아파트",
+    "gu": "강서구",
+    "dong": "등촌동",
+    "namuName": "보람아파트"
+  },
+  {
+    "kaptCode": "A15776414",
+    "kaptName": "등촌주공4단지",
+    "gu": "강서구",
+    "dong": "등촌동",
+    "namuName": "등촌주공4단지"
+  },
+  {
+    "kaptCode": "A15728003",
+    "kaptName": "마곡수명산파크3단지",
+    "gu": "강서구",
+    "dong": "내발산동",
+    "namuName": "마곡 수명산파크 3단지"
+  },
+  {
+    "kaptCode": "A15190705",
+    "kaptName": "신림푸르지오",
+    "gu": "관악구",
+    "dong": "신림동",
+    "namuName": "신림푸르지오"
+  },
+  {
+    "kaptCode": "A14381512",
+    "kaptName": "광장현대5단지",
+    "gu": "광진구",
+    "dong": "광장동",
+    "namuName": "광장현대5단지"
+  },
+  {
+    "kaptCode": "A14319011",
+    "kaptName": "자양우성1차",
+    "gu": "광진구",
+    "dong": "자양동",
+    "namuName": "자양우성아파트1차"
+  },
+  {
+    "kaptCode": "A15288814",
+    "kaptName": "신도림대림1,2차",
+    "gu": "구로구",
+    "dong": "신도림동",
+    "namuName": "신도림대림e편한세상2차아파트"
+  },
+  {
+    "kaptCode": "A15288805",
+    "kaptName": "신도림대림5차e-편한세상",
+    "gu": "구로구",
+    "dong": "신도림동",
+    "namuName": "신도림대림e편한세상5차아파트"
+  },
+  {
+    "kaptCode": "A15288813",
+    "kaptName": "신도림동아1차",
+    "gu": "구로구",
+    "dong": "신도림동",
+    "namuName": "신도림동아1차아파트"
+  },
+  {
+    "kaptCode": "A15205513",
+    "kaptName": "신도림태영타운",
+    "gu": "구로구",
+    "dong": "구로동",
+    "namuName": "신도림태영데시앙아파트"
+  },
+  {
+    "kaptCode": "A15288803",
+    "kaptName": "신도림현대",
+    "gu": "구로구",
+    "dong": "신도림동",
+    "namuName": "신도림현대아파트"
+  },
+  {
+    "kaptCode": "A10025193",
+    "kaptName": "항동 한양수자인 에듀힐즈",
+    "gu": "구로구",
+    "dong": "항동",
+    "namuName": "한양수자인에듀힐즈 5단지"
+  },
+  {
+    "kaptCode": "A15303205",
+    "kaptName": "관악벽산타운5단지",
+    "gu": "금천구",
+    "dong": "시흥동",
+    "namuName": "관악산벽산타운 5단지"
+  },
+  {
+    "kaptCode": "A15386506",
+    "kaptName": "남서울럭키아파트",
+    "gu": "금천구",
+    "dong": "시흥동",
+    "namuName": "남서울럭키아파트"
+  },
+  {
+    "kaptCode": "A15370103",
+    "kaptName": "남서울힐스테이트",
+    "gu": "금천구",
+    "dong": "시흥동",
+    "namuName": "남서울힐스테이트"
+  },
+  {
+    "kaptCode": "A13980512",
+    "kaptName": "공릉1단지",
+    "gu": "노원구",
+    "dong": "공릉동",
+    "namuName": "SH공릉1단지아파트"
+  },
+  {
+    "kaptCode": "A13983803",
+    "kaptName": "상계대림e-편한세상",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계대림아파트"
+  },
+  {
+    "kaptCode": "A13982301",
+    "kaptName": "상계주공11단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 11단지"
+  },
+  {
+    "kaptCode": "A13982202",
+    "kaptName": "상계주공12단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 12단지"
+  },
+  {
+    "kaptCode": "A13920803",
+    "kaptName": "상계주공16단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 16단지"
+  },
+  {
+    "kaptCode": "A13983105",
+    "kaptName": "상계주공1단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 1단지"
+  },
+  {
+    "kaptCode": "A13983004",
+    "kaptName": "상계주공2단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 2단지"
+  },
+  {
+    "kaptCode": "A13920706",
+    "kaptName": "상계주공4단지",
+    "gu": "노원구",
+    "dong": "상계동",
+    "namuName": "상계주공 4단지"
+  },
+  {
+    "kaptCode": "A13203102",
+    "kaptName": "쌍문극동",
+    "gu": "도봉구",
+    "dong": "쌍문동",
+    "namuName": "쌍문극동아파트"
+  },
+  {
+    "kaptCode": "A10026232",
+    "kaptName": "래미안미드카운티",
+    "gu": "동대문구",
+    "dong": "답십리동",
+    "namuName": "래미안 미드카운티"
+  },
+  {
+    "kaptCode": "A13084101",
+    "kaptName": "래미안장안",
+    "gu": "동대문구",
+    "dong": "장안동",
+    "namuName": "장안삼성래미안1차"
+  },
+  {
+    "kaptCode": "A13085301",
+    "kaptName": "전농삼성",
+    "gu": "동대문구",
+    "dong": "전농동",
+    "namuName": "전농삼성래미안아파트"
+  },
+  {
+    "kaptCode": "A13009206",
+    "kaptName": "휘경동일스위트리버",
+    "gu": "동대문구",
+    "dong": "휘경동",
+    "namuName": "동일스위터러버아파트"
+  },
+  {
+    "kaptCode": "A15603206",
+    "kaptName": "상도더샵",
+    "gu": "동작구",
+    "dong": "상도동",
+    "namuName": "상도더샵1차"
+  },
+  {
+    "kaptCode": "A10024365",
+    "kaptName": "상도역롯데캐슬파크엘",
+    "gu": "동작구",
+    "dong": "상도동",
+    "namuName": "상도역 롯데캐슬 파크엘"
+  },
+  {
+    "kaptCode": "A15603203",
+    "kaptName": "아이파크상도동",
+    "gu": "동작구",
+    "dong": "상도동",
+    "namuName": "상도동현대아이파크"
+  },
+  {
+    "kaptCode": "A15609007",
+    "kaptName": "이수역리가",
+    "gu": "동작구",
+    "dong": "사당동",
+    "namuName": "이수역리가"
+  },
+  {
+    "kaptCode": "A10025867",
+    "kaptName": "흑석롯데캐슬에듀포레",
+    "gu": "동작구",
+    "dong": "흑석동",
+    "namuName": "롯데캐슬 에듀포레"
+  },
+  {
+    "kaptCode": "A15679107",
+    "kaptName": "흑석한강센트레빌",
+    "gu": "동작구",
+    "dong": "흑석동",
+    "namuName": "흑석 한강 센트레빌 2차"
+  },
+  {
+    "kaptCode": "A12175203",
+    "kaptName": "마포래미안푸르지오",
+    "gu": "마포구",
+    "dong": "아현동",
+    "namuName": "마포 래미안 푸르지오 3단지"
+  },
+  {
+    "kaptCode": "A10027817",
+    "kaptName": "DMC파크뷰자이아파트",
+    "gu": "서대문구",
+    "dong": "남가좌동",
+    "namuName": "DMC파크뷰자이 1단지"
+  },
+  {
+    "kaptCode": "A13776509",
+    "kaptName": "래미안퍼스티지",
+    "gu": "서초구",
+    "dong": "반포동",
+    "namuName": "래미안 퍼스티지"
+  },
+  {
+    "kaptCode": "A13776301",
+    "kaptName": "반포리체",
+    "gu": "서초구",
+    "dong": "반포동",
+    "namuName": "반포 리체"
+  },
+  {
+    "kaptCode": "A13778204",
+    "kaptName": "서초힐스",
+    "gu": "서초구",
+    "dong": "우면동",
+    "namuName": "서초힐스"
+  },
+  {
+    "kaptCode": "A10026004",
+    "kaptName": "신반포자이아파트",
+    "gu": "서초구",
+    "dong": "잠원동",
+    "namuName": "반포자이"
+  },
+  {
+    "kaptCode": "A13309404",
+    "kaptName": "금호대우",
+    "gu": "성동구",
+    "dong": "금호동4가",
+    "namuName": "금호동대우아파트"
+  },
+  {
+    "kaptCode": "A13309402",
+    "kaptName": "금호동롯데아파트",
+    "gu": "성동구",
+    "dong": "금호동4가",
+    "namuName": "금호동롯데아파트"
+  },
+  {
+    "kaptCode": "A13380803",
+    "kaptName": "서울숲푸르지오",
+    "gu": "성동구",
+    "dong": "금호동4가",
+    "namuName": "서울숲푸르지오아파트"
+  },
+  {
+    "kaptCode": "A13375902",
+    "kaptName": "옥수삼성",
+    "gu": "성동구",
+    "dong": "옥수동",
+    "namuName": "옥수삼성아파트"
+  },
+  {
+    "kaptCode": "A10027920",
+    "kaptName": "텐즈힐1단지",
+    "gu": "성동구",
+    "dong": "하왕십리동",
+    "namuName": "왕십리뉴타운텐즈힐1단지"
+  },
+  {
+    "kaptCode": "A13385705",
+    "kaptName": "한신무학",
+    "gu": "성동구",
+    "dong": "하왕십리동",
+    "namuName": "한신무학아파트"
+  },
+  {
+    "kaptCode": "A13307204",
+    "kaptName": "행당대림",
+    "gu": "성동구",
+    "dong": "행당동",
+    "namuName": "행당대림아파트"
+  },
+  {
+    "kaptCode": "A13681303",
+    "kaptName": "돈암동부센트레빌",
+    "gu": "성북구",
+    "dong": "돈암동",
+    "namuName": "돈암동부센트레빌아파트"
+  },
+  {
+    "kaptCode": "A10027227",
+    "kaptName": "돈암코오롱하늘채아파트",
+    "gu": "성북구",
+    "dong": "돈암동",
+    "namuName": "돈암코오롱하늘채아파트"
+  },
+  {
+    "kaptCode": "A13606004",
+    "kaptName": "돈암한신한진아파트",
+    "gu": "성북구",
+    "dong": "돈암동",
+    "namuName": "해오름한진한신아파트"
+  },
+  {
+    "kaptCode": "A13603701",
+    "kaptName": "동소문한신휴플러스",
+    "gu": "성북구",
+    "dong": "동소문동4가",
+    "namuName": "동소문2차한신휴플러스아파트"
+  },
+  {
+    "kaptCode": "A10025140",
+    "kaptName": "동소문현대아파트",
+    "gu": "성북구",
+    "dong": "돈암동",
+    "namuName": "동소문현대아파트"
+  },
+  {
+    "kaptCode": "A13613007",
+    "kaptName": "래미안월곡",
+    "gu": "성북구",
+    "dong": "하월곡동",
+    "namuName": "래미안월곡아파트"
+  },
+  {
+    "kaptCode": "A13677401",
+    "kaptName": "이편한세상보문",
+    "gu": "성북구",
+    "dong": "보문동3가",
+    "namuName": "e편한세상보문"
+  },
+  {
+    "kaptCode": "A13614301",
+    "kaptName": "장월SH-VILLE1단지",
+    "gu": "성북구",
+    "dong": "장위동",
+    "namuName": "장원SH빌1단지아파트"
+  },
+  {
+    "kaptCode": "A13684701",
+    "kaptName": "정릉중앙하이츠",
+    "gu": "성북구",
+    "dong": "정릉동",
+    "namuName": "정릉중앙하이츠빌2차"
+  },
+  {
+    "kaptCode": "A13805002",
+    "kaptName": "올림픽선수기자촌아파트",
+    "gu": "송파구",
+    "dong": "방이동",
+    "namuName": "올림픽선수기자촌"
+  },
+  {
+    "kaptCode": "A13879102",
+    "kaptName": "잠실5단지아파트",
+    "gu": "송파구",
+    "dong": "잠실동",
+    "namuName": "잠실주공5단지"
+  },
+  {
+    "kaptCode": "A13822002",
+    "kaptName": "잠실동트리지움",
+    "gu": "송파구",
+    "dong": "잠실동",
+    "namuName": "트리지움"
+  },
+  {
+    "kaptCode": "A13822001",
+    "kaptName": "잠실레이크팰리스",
+    "gu": "송파구",
+    "dong": "잠실동",
+    "namuName": "레이크팰리스"
+  },
+  {
+    "kaptCode": "A13822003",
+    "kaptName": "잠실리센츠",
+    "gu": "송파구",
+    "dong": "잠실동",
+    "namuName": "리센츠"
+  },
+  {
+    "kaptCode": "A13822004",
+    "kaptName": "잠실엘스아파트",
+    "gu": "송파구",
+    "dong": "잠실동",
+    "namuName": "잠실엘스"
+  },
+  {
+    "kaptCode": "A13824006",
+    "kaptName": "잠실파크리오",
+    "gu": "송파구",
+    "dong": "신천동",
+    "namuName": "잠실 파크리오"
+  },
+  {
+    "kaptCode": "A10024152",
+    "kaptName": "포레나송파",
+    "gu": "송파구",
+    "dong": "거여동",
+    "namuName": "포레나 송파"
+  },
+  {
+    "kaptCode": "A10025850",
+    "kaptName": "헬리오시티아파트",
+    "gu": "송파구",
+    "dong": "가락동",
+    "namuName": "헬리오시티"
+  },
+  {
+    "kaptCode": "A15807205",
+    "kaptName": "롯데캐슬",
+    "gu": "양천구",
+    "dong": "신정동",
+    "namuName": "길음뉴타운롯데캐슬골든힐스"
+  },
+  {
+    "kaptCode": "A10024872",
+    "kaptName": "목동 센트럴 아이파크위브 아파트",
+    "gu": "양천구",
+    "dong": "신월동",
+    "namuName": "목동 센트럴 아이파크 위브"
+  },
+  {
+    "kaptCode": "A10025070",
+    "kaptName": "보라매 sk뷰",
+    "gu": "영등포구",
+    "dong": "신길동",
+    "namuName": "보라매SK뷰"
+  },
+  {
+    "kaptCode": "A15003002",
+    "kaptName": "영등포푸르지오",
+    "gu": "영등포구",
+    "dong": "영등포동",
+    "namuName": "영등포푸르지오"
+  },
+  {
+    "kaptCode": "A14072901",
+    "kaptName": "북한강성원아파트",
+    "gu": "용산구",
+    "dong": "이촌동",
+    "namuName": "성원아파트"
+  },
+  {
+    "kaptCode": "A14009001",
+    "kaptName": "용산e편한세상",
+    "gu": "용산구",
+    "dong": "신계동",
+    "namuName": "용산e편한세상아파트"
+  },
+  {
+    "kaptCode": "A14072702",
+    "kaptName": "이촌",
+    "gu": "용산구",
+    "dong": "이촌동",
+    "namuName": "이촌코오롱아파트"
+  },
+  {
+    "kaptCode": "A14003106",
+    "kaptName": "이촌강촌아파트",
+    "gu": "용산구",
+    "dong": "이촌동",
+    "namuName": "강촌아파트"
+  },
+  {
+    "kaptCode": "A14072701",
+    "kaptName": "한가람아파트",
+    "gu": "용산구",
+    "dong": "이촌동",
+    "namuName": "한가람아파트"
+  },
+  {
+    "kaptCode": "A12201003",
+    "kaptName": "백련산힐스테이트1차",
+    "gu": "은평구",
+    "dong": "응암동",
+    "namuName": "백련산 힐스테이트 1차"
+  },
+  {
+    "kaptCode": "A12201002",
+    "kaptName": "백련산힐스테이트2차",
+    "gu": "은평구",
+    "dong": "응암동",
+    "namuName": "백련산 힐스테이트 2차"
+  },
+  {
+    "kaptCode": "A12290901",
+    "kaptName": "백련산힐스테이트3차",
+    "gu": "은평구",
+    "dong": "응암동",
+    "namuName": "백련산 힐스테이트 3차"
+  },
+  {
+    "kaptCode": "A10023875",
+    "kaptName": "DMC센트럴자이",
+    "gu": "은평구",
+    "dong": "증산동",
+    "namuName": "DMC센트럴자이 2블럭"
+  },
+  {
+    "kaptCode": "A10025710",
+    "kaptName": "경희궁 롯데캐슬아파트",
+    "gu": "종로구",
+    "dong": "무악동",
+    "namuName": "경희궁롯데캐슬"
+  },
+  {
+    "kaptCode": "A11081503",
+    "kaptName": "무악현대아파트",
+    "gu": "종로구",
+    "dong": "무악동",
+    "namuName": "무악현대아파트"
+  },
+  {
+    "kaptCode": "A11077101",
+    "kaptName": "창신쌍용아파트2단지",
+    "gu": "종로구",
+    "dong": "창신동",
+    "namuName": "창신쌍용2단지아파트"
+  },
+  {
+    "kaptCode": "A13184609",
+    "kaptName": "신내4단지",
+    "gu": "중랑구",
+    "dong": "묵동",
+    "namuName": "신내4단지아파트"
+  },
+  {
+    "kaptCode": "A13176901",
+    "kaptName": "신내6단지",
+    "gu": "중랑구",
+    "dong": "신내동",
+    "namuName": "신내6단지시영아파트"
+  },
+  {
+    "kaptCode": "A13187203",
+    "kaptName": "신내진로아파트",
+    "gu": "중랑구",
+    "dong": "신내동",
+    "namuName": "신내7단지진로아파트"
+  },
+  {
+    "kaptCode": "A13183204",
+    "kaptName": "용마한신",
+    "gu": "중랑구",
+    "dong": "면목동",
+    "namuName": "용마한신1차"
+  }
+]

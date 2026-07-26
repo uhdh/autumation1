@@ -60,6 +60,13 @@
     font-weight:bold;
     border-bottom:2px solid var(--excel-green);
   }
+  .ribbon-tabs span.ribbon-tab-live{
+    cursor:pointer;
+    margin-left:auto;
+  }
+  .ribbon-tabs span.ribbon-tab-live:hover{
+    color:var(--excel-green-dark);
+  }
   .ribbon-body{
     display:flex;
     align-items:center;
@@ -216,6 +223,18 @@
     font-weight:bold;
     margin-left:2px;
   }
+  .chopuma-badge{
+    display:inline-block;
+    background:#1565c0;
+    color:#fff;
+    font-size:9px;
+    font-weight:bold;
+    padding:1px 4px;
+    border-radius:2px;
+    margin-left:4px;
+    vertical-align:middle;
+    cursor:help;
+  }
   .cell-sm{ font-size:10px; }
   .trend-inline{ font-weight:normal; font-size:10px; color:var(--muted); }
   .trend-point{ cursor:help; border-bottom:1px dotted var(--muted); }
@@ -295,6 +314,17 @@
     text-align:right;
   }
 
+  .top-traded-intro{
+    padding:14px;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+  }
+  .top-traded-intro .ribbon-btn{
+    display:inline-block;
+    margin-top:8px;
+  }
+
   @media (max-width:760px){
     .split-sheets{ flex-direction:column; height:auto; }
     .sheet-pane{ height:50vh; min-height:280px; }
@@ -313,7 +343,7 @@
 
 <div class="ribbon">
   <div class="ribbon-tabs">
-    <span class="active">홈</span><span>삽입</span><span>페이지 레이아웃</span><span>수식</span><span>데이터</span><span>검토</span><span>보기</span>
+    <span class="active" id="ribbonTabHome">홈</span><span>삽입</span><span>페이지 레이아웃</span><span>수식</span><span>데이터</span><span>검토</span><span>보기</span><span class="ribbon-tab-live" id="ribbonTabTopTraded">2026 최다거래</span>
   </div>
   <div class="ribbon-body">
     <div class="ribbon-group">
@@ -359,7 +389,7 @@
 </div>
 <div class="note" id="statusNote">데이터 조회 중...</div>
 
-<div class="split-sheets">
+<div class="split-sheets" id="homeSheets">
   <div class="sheet-pane">
     <div class="pane-tab">대장단지</div>
     <div class="pane-scroll" id="watchArea"></div>
@@ -373,6 +403,12 @@
   <div class="sheet-pane">
     <div class="pane-tab">부동산 뉴스</div>
     <div class="pane-scroll" id="newsArea"></div>
+  </div>
+</div>
+<div class="split-sheets" id="topTradedPage" style="display:none">
+  <div class="sheet-pane">
+    <div class="pane-tab">2026 최다거래</div>
+    <div class="pane-scroll" id="topTradedArea"></div>
   </div>
 </div>
 
@@ -496,6 +532,13 @@ function fmtHousehold(it){
   return `${info.householdCount.toLocaleString()}세대`;
 }
 
+// 초품아 뱃지. 나무위키 사용자 편집 목록 기반 비공식 정보라는 점을 title 툴팁으로 명시
+function fmtChopumaBadge(it){
+  const info = currentBasisByAptNm.get(it.aptNm);
+  if(!info || !info.isChopuma) return "";
+  return `<span class="chopuma-badge" title="나무위키 '초품아' 문서 등재 사례 (사용자 편집 정보, 비공식)">초품아</span>`;
+}
+
 // 대장 단지 = 조회된 데이터에 등장하는 법정동마다 거래금액 최고가 건 1개씩
 function getFlagshipsByDong(items){
   const byDong = new Map();
@@ -515,7 +558,7 @@ function renderFlagshipSheet(items){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
+        <th style="width:32%">A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
         <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>연식</th><th>세대수</th>
@@ -527,7 +570,7 @@ function renderFlagshipSheet(items){
     const trendMarkup = renderInlineTrend(getApartmentTrend(currentTrendDatasets, it.aptNm, it.excluUseAr));
     html += `<tr class="flagship-row">
       <th>${i+2}</th>
-      <td class="${cls}"><span class="flagship-badge">${it.umdNm}</span>${it.aptNm}</td>
+      <td class="${cls}"><span class="flagship-badge">${it.umdNm}</span>${it.aptNm}${fmtChopumaBadge(it)}</td>
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}${trendMarkup}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
@@ -550,7 +593,7 @@ function renderWatchlistSheet(items){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
+        <th style="width:32%">A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th>
       </tr>
       <tr>
         <th></th><th>단지명</th><th>전용면적</th><th>거래금액</th><th>평당가</th><th>연식</th><th>세대수</th>
@@ -561,7 +604,7 @@ function renderWatchlistSheet(items){
     const cls = it.isCancelled ? "cancelled" : "";
     html += `<tr>
       <th>${i+2}</th>
-      <td class="${cls}">${it.aptNm}</td>
+      <td class="${cls}">${it.aptNm}${fmtChopumaBadge(it)}</td>
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
@@ -587,7 +630,7 @@ function renderFeedSheet(items){
     <thead>
       <tr class="col-row1">
         <th style="width:30px"></th>
-        <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
+        <th>A</th><th style="width:26%">B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
       </tr>
       <tr>
         <th></th><th>거래일</th><th>단지명</th><th>면적</th><th>금액</th><th>평당가</th><th>연식</th><th>세대수</th>
@@ -600,7 +643,7 @@ function renderFeedSheet(items){
     html += `<tr>
       <th>${i+2}</th>
       <td class="${cls}">${it.dealYear}.${String(it.dealMonth).padStart(2,"0")}.${String(it.dealDay).padStart(2,"0")}</td>
-      <td class="${cls}">${it.aptNm}${note}</td>
+      <td class="${cls}">${it.aptNm}${fmtChopumaBadge(it)}${note}</td>
       <td class="${cls} cell-sm">${fmtAreaPyeong(it.excluUseAr)}</td>
       <td class="${cls} amt-up">${fmtAmount(it.dealAmountManwon)}</td>
       <td class="${cls} cell-sm">${fmtPricePerPyeong(it)}</td>
@@ -705,6 +748,149 @@ function render(){
   document.getElementById("newsArea").innerHTML = renderNewsSheet();
   const filterNote = isFilterActive() ? ` · 필터 적용 ${filtered.length}/${currentItems.length}건` : "";
   document.getElementById("statusLeft").textContent = (usingLiveData ? "실시간 데이터" : "샘플 데이터 (프로토타입)") + filterNote;
+}
+
+// ────────────────────────────────────────────────
+// "2026 최다거래" 탭 — 서울 25개구 × 2026년 1~6월(확정치) 실거래를 전수 집계해
+// 거래 건수 상위 단지를 보여준다. 지역·계약월 선택과 무관하게 독립적으로 동작.
+// 백엔드에 별도 집계 API를 두지 않고 기존 /api/apt-trade(구·월 단위, 6시간 KV 캐시)를
+// 프런트에서 반복 호출하는 방식을 택함 — Cloudflare 무료 플랜의 요청당 서브리퀘스트
+// 제한(150회는 초과)을 우회하고, 이미 있는 캐시를 그대로 재사용하기 위함.
+// ────────────────────────────────────────────────
+const TOP_TRADED_MONTHS = ["202601","202602","202603","202604","202605","202606"];
+const TOP_TRADED_LIMIT = 20;
+const TOP_TRADED_CONCURRENCY = 6;
+const TOP_TRADED_CACHE_KEY = "apt_review_top_traded_2026";
+const TOP_TRADED_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // apt-trade의 KV 캐시 TTL(6시간)과 동일하게 맞춤
+
+async function mapWithConcurrency(items, limit, fn){
+  const results = new Array(items.length);
+  let idx = 0;
+  async function worker(){
+    while(idx < items.length){
+      const i = idx++;
+      results[i] = await fn(items[i], i);
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(limit, items.length)}, worker));
+  return results;
+}
+
+// 25개구 × 6개월 전수 조회 후 단지(정규화된 이름+법정동) 단위로 거래건수·거래대금 집계
+// (해제된 거래는 실거래로 보기 어려워 집계에서 제외)
+async function aggregateTopTraded(onProgress){
+  const jobs = [];
+  SEOUL_GU.forEach(g => TOP_TRADED_MONTHS.forEach(ymd => jobs.push({ lawdCd: g.lawd_cd, guName: g.name, ymd })));
+
+  let done = 0;
+  const groups = new Map();
+
+  await mapWithConcurrency(jobs, TOP_TRADED_CONCURRENCY, async (job)=>{
+    const items = await fetchMonthItems(job.lawdCd, job.ymd);
+    items.forEach(it=>{
+      if(it.isCancelled) return;
+      const key = `${normalizeAptName(it.aptNm)}|${it.umdNm}`;
+      let g = groups.get(key);
+      if(!g){
+        g = { aptNm: it.aptNm, umdNm: it.umdNm, guName: job.guName, count: 0, totalAmount: 0 };
+        groups.set(key, g);
+      }
+      g.count += 1;
+      g.totalAmount += it.dealAmountManwon || 0;
+    });
+    done += 1;
+    if(onProgress) onProgress(done, jobs.length);
+  });
+
+  return Array.from(groups.values()).sort((a, b)=> b.count - a.count).slice(0, TOP_TRADED_LIMIT);
+}
+
+function loadTopTradedCache(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(TOP_TRADED_CACHE_KEY));
+    if(!raw || !Array.isArray(raw.groups)) return null;
+    if(Date.now() - raw.ts > TOP_TRADED_CACHE_TTL_MS) return null;
+    return raw.groups;
+  }catch(e){ return null; }
+}
+function saveTopTradedCache(groups){
+  localStorage.setItem(TOP_TRADED_CACHE_KEY, JSON.stringify({ ts: Date.now(), groups }));
+}
+
+function renderTopTradedIntro(statusText){
+  return `<div class="top-traded-intro">
+    2026년 1~6월(확정치) 서울 25개구 실거래가를 전수 집계해 거래건수 상위 ${TOP_TRADED_LIMIT}개 단지를 보여줍니다.<br>
+    25개구 × 6개월 = 150회 조회라 다소 시간이 걸릴 수 있습니다.
+    <div id="topTradedStatus">${statusText || ""}</div>
+    <span class="ribbon-btn" id="topTradedStartBtn">집계 시작</span>
+  </div>`;
+}
+
+function renderTopTradedSheet(groups){
+  let html = `<table class="grid">
+    <thead>
+      <tr class="col-row1">
+        <th style="width:30px"></th>
+        <th>A</th><th>B</th><th>C</th><th>D</th>
+      </tr>
+      <tr>
+        <th></th><th>단지명</th><th>거래건수</th><th>총 거래대금</th><th>평균 거래금액</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  groups.forEach((g, i)=>{
+    const avg = g.count ? Math.round(g.totalAmount / g.count) : null;
+    html += `<tr class="${i < 3 ? "flagship-row" : ""}">
+      <th>${i+2}</th>
+      <td><span class="flagship-badge">${g.guName}</span>${g.aptNm} <span class="pyeong">${g.umdNm}</span></td>
+      <td class="amt-up">${g.count}건</td>
+      <td>${fmtAmount(g.totalAmount)}</td>
+      <td class="cell-sm">${fmtAmount(avg)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>
+    <div class="top-traded-intro">기준: 2026.01~06 확정 거래(해제 제외) · <span class="ribbon-btn" id="topTradedRefreshBtn">다시 집계</span></div>`;
+  return html;
+}
+
+async function runTopTradedAggregation(){
+  const area = document.getElementById("topTradedArea");
+  area.innerHTML = renderTopTradedIntro("집계 중... 0/150");
+
+  const groups = await aggregateTopTraded((doneCount, total)=>{
+    const statusEl = document.getElementById("topTradedStatus");
+    if(statusEl) statusEl.textContent = `집계 중... ${doneCount}/${total}`;
+  });
+
+  if(!groups.length){
+    area.innerHTML = renderTopTradedIntro("집계 결과가 없습니다 — 실거래가 API 연결 상태를 확인하세요.");
+    bindTopTradedStartBtn();
+    return;
+  }
+  saveTopTradedCache(groups);
+  area.innerHTML = renderTopTradedSheet(groups);
+  bindTopTradedRefreshBtn();
+}
+
+function bindTopTradedStartBtn(){
+  const btn = document.getElementById("topTradedStartBtn");
+  if(btn) btn.addEventListener("click", runTopTradedAggregation);
+}
+function bindTopTradedRefreshBtn(){
+  const btn = document.getElementById("topTradedRefreshBtn");
+  if(btn) btn.addEventListener("click", runTopTradedAggregation);
+}
+
+function initTopTradedTab(){
+  const area = document.getElementById("topTradedArea");
+  const cached = loadTopTradedCache();
+  if(cached && cached.length){
+    area.innerHTML = renderTopTradedSheet(cached);
+    bindTopTradedRefreshBtn();
+  }else{
+    area.innerHTML = renderTopTradedIntro("");
+    bindTopTradedStartBtn();
+  }
 }
 
 function populateSelects(){
@@ -881,15 +1067,36 @@ function matchSeoulComplex(aptNm, umdNm){
   return fallback;
 }
 
-// currentItems에 등장하는 단지들의 세대수를 정적 목록에서 매칭해 aptNm → 기본정보 맵으로 구성
+// "초품아"(초등학교를 품은 아파트) 목록 — 나무위키 "초품아" 문서 4.1(서울특별시) 사례를 K-apt kaptCode로
+// 매칭해 정적 JSON으로 미리 가공해둠(2026-07-26 기준, 101건 중 95건 매칭). 사용자 편집 위키 출처라
+// 비공식 정보이며 완전하지 않을 수 있음 — 뱃지에도 그 점을 명시함
+let chopumaKaptCodes = null; // Set<kaptCode>
+async function loadChopumaSet(){
+  if(chopumaKaptCodes) return chopumaKaptCodes;
+  try{
+    const res = await fetch("/seoul_chopuma.json");
+    const list = await res.json();
+    chopumaKaptCodes = new Set(list.map(c => c.kaptCode));
+  }catch(e){
+    chopumaKaptCodes = new Set();
+  }
+  return chopumaKaptCodes;
+}
+
+// currentItems에 등장하는 단지들의 세대수·초품아 여부를 정적 목록에서 매칭해 aptNm → 기본정보 맵으로 구성
 async function loadHouseholdCounts(items){
   await loadSeoulComplexList();
+  await loadChopumaSet();
   const map = new Map();
   const uniqueNames = Array.from(new Set(items.map(it => it.aptNm)));
   uniqueNames.forEach(aptNm=>{
     const it = items.find(i => i.aptNm === aptNm);
     const match = matchSeoulComplex(aptNm, it?.umdNm);
-    if(match) map.set(aptNm, { householdCount: match.householdCount, buildYearMonth: match.buildYearMonth });
+    if(match) map.set(aptNm, {
+      householdCount: match.householdCount,
+      buildYearMonth: match.buildYearMonth,
+      isChopuma: chopumaKaptCodes.has(match.kaptCode),
+    });
   });
   return map;
 }
@@ -1006,7 +1213,21 @@ document.getElementById("watchSearchResults").addEventListener("click", (e)=>{
   closeWatchModal();
 });
 
+// 상단 리본 탭(홈/삽입/.../보기)은 원래 장식용이었으나, "2026 최다거래" 탭만
+// 실제로 동작하도록 함: 클릭 시 active 표시가 이동하고, 홈 화면(대장단지 등)과
+// "2026 최다거래" 페이지가 서로 전환됨 (다른 탭은 전부 홈 화면으로 취급)
+document.querySelectorAll(".ribbon-tabs > span").forEach(tab=>{
+  tab.addEventListener("click", ()=>{
+    document.querySelectorAll(".ribbon-tabs > span").forEach(t=>t.classList.remove("active"));
+    tab.classList.add("active");
+    const isTopTraded = tab.id === "ribbonTabTopTraded";
+    document.getElementById("topTradedPage").style.display = isTopTraded ? "flex" : "none";
+    document.getElementById("homeSheets").style.display = isTopTraded ? "none" : "flex";
+  });
+});
+
 populateSelects();
+initTopTradedTab();
 (async ()=>{
   const lawdCd = document.getElementById("lawdSelect").value;
   const dealYmd = document.getElementById("ymdSelect").value;
