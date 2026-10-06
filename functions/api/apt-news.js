@@ -13,12 +13,25 @@
 
 const API_BASE = "https://openapi.naver.com/v1/search/news.json";
 const CACHE_TTL_SECONDS = 60 * 30; // 30분 캐시
+const BROWSER_CACHE_SECONDS = 60 * 5;
 const DISPLAY_COUNT = 10;
+
+// 화면이 실제로 보내는 검색어("OO구 부동산")만 허용 — 임의 검색어를 받으면 누구나 네이버 API 쿼터를 쓸 수 있음
+const SEOUL_GU = [
+  "종로구", "중구", "용산구", "성동구", "광진구", "동대문구", "중랑구", "성북구", "강북구",
+  "도봉구", "노원구", "은평구", "서대문구", "마포구", "양천구", "강서구", "구로구", "금천구",
+  "영등포구", "동작구", "관악구", "서초구", "강남구", "송파구", "강동구",
+];
+const ALLOWED_QUERIES = new Set(["서울 부동산", ...SEOUL_GU.map((g) => `${g} 부동산`)]);
 
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const query = (url.searchParams.get("query") || "부동산").slice(0, 100);
+  const query = url.searchParams.get("query") || "서울 부동산";
+
+  if (!ALLOWED_QUERIES.has(query)) {
+    return jsonResponse({ error: "query는 '서울 부동산' 또는 '<서울 자치구> 부동산' 형식이어야 합니다. 예: 강남구 부동산" }, 400);
+  }
 
   if (!env.NAVER_CLIENT_ID || !env.NAVER_CLIENT_SECRET) {
     return jsonResponse({ error: "네이버 API 키(NAVER_CLIENT_ID/NAVER_CLIENT_SECRET)가 설정되지 않았습니다." }, 500);
@@ -30,7 +43,7 @@ export async function onRequestGet(context) {
   if (env.APT_CACHE) {
     const cached = await env.APT_CACHE.get(cacheKey, "json");
     if (cached) {
-      return jsonResponse({ ...cached, cached: true });
+      return jsonResponse({ ...cached, cached: true }, 200, BROWSER_CACHE_SECONDS);
     }
   }
 
@@ -70,7 +83,7 @@ export async function onRequestGet(context) {
     });
   }
 
-  return jsonResponse(payload);
+  return jsonResponse(payload, 200, BROWSER_CACHE_SECONDS);
 }
 
 // 네이버 검색 결과의 title/description에는 <b> 강조 태그와 HTML 엔티티가 섞여 있어 제거
@@ -85,9 +98,13 @@ function stripHtml(str) {
     .replace(/&gt;/g, ">");
 }
 
-function jsonResponse(obj, status = 200) {
+// 오류 응답은 캐시하지 않음 (maxAge 0)
+function jsonResponse(obj, status = 200, maxAge = 0) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": maxAge ? `public, max-age=${maxAge}` : "no-store",
+    },
   });
 }

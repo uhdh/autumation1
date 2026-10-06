@@ -12,6 +12,9 @@
 
 const API_BASE = "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade";
 const CACHE_TTL_SECONDS = 60 * 60 * 6; // 6시간 캐시 (데이터 자체는 하루 1회 갱신이므로 충분)
+const BROWSER_CACHE_SECONDS = 60 * 10; // 같은 구·월 재조회(최다거래 집계 등)가 함수까지 오지 않도록 브라우저에도 짧게 캐시
+const PAGE_SIZE = 1000;
+const MAX_PAGES = 10; // 구·월 단위 거래가 1만 건을 넘지는 않음. 응답 이상 시 무한 반복 방지용 상한
 
 export async function onRequestGet(context) {
   const { request, env } = context;
@@ -19,11 +22,15 @@ export async function onRequestGet(context) {
   const lawdCd = url.searchParams.get("lawdCd");
   const dealYmd = url.searchParams.get("dealYmd");
 
-  if (!lawdCd || !/^\d{5}$/.test(lawdCd)) {
-    return jsonResponse({ error: "lawdCd는 5자리 숫자여야 합니다. 예: 11680" }, 400);
+  // 이 사이트는 서울만 다루므로 서울(11xxx) 외 코드는 거절 — 공개 배포 시 범용 프록시로 쓰이는 것을 막음
+  if (!lawdCd || !/^11\d{3}$/.test(lawdCd)) {
+    return jsonResponse({ error: "lawdCd는 서울 법정동코드 5자리(11로 시작)여야 합니다. 예: 11680" }, 400);
   }
-  if (!dealYmd || !/^\d{6}$/.test(dealYmd)) {
+  if (!dealYmd || !/^20\d{2}(0[1-9]|1[0-2])$/.test(dealYmd)) {
     return jsonResponse({ error: "dealYmd는 6자리 숫자(YYYYMM)여야 합니다. 예: 202605" }, 400);
+  }
+  if (!env.APT_SERVICE_KEY) {
+    return jsonResponse({ error: "실거래가 API 키(APT_SERVICE_KEY)가 설정되지 않았습니다." }, 500);
   }
 
   const cacheKey = `apt:${lawdCd}:${dealYmd}`;
@@ -32,30 +39,34 @@ export async function onRequestGet(context) {
   if (env.APT_CACHE) {
     const cached = await env.APT_CACHE.get(cacheKey, "json");
     if (cached) {
-      return jsonResponse({ ...cached, cached: true });
+      return jsonResponse({ ...cached, cached: true }, 200, BROWSER_CACHE_SECONDS);
     }
   }
 
-  // 2. 공공데이터포털 API 호출
-  const apiUrl = `${API_BASE}?serviceKey=${env.APT_SERVICE_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=200`;
-
-  let xmlText;
+  // 2. 공공데이터포털 API 호출 — 거래가 많은 구·월은 한 페이지에 다 안 들어오므로 totalCount에 닿을 때까지 페이지를 넘김
+  const items = [];
   try {
-    // User-Agent 헤더가 없으면 공공데이터포털 WAF가 요청을 차단(400 Request Blocked)하므로 필수로 지정
-    const apiRes = await fetch(apiUrl, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; excelzip-apt-review/1.0)" },
-    });
-    xmlText = await apiRes.text();
+    for (let pageNo = 1; pageNo <= MAX_PAGES; pageNo++) {
+      const apiUrl = `${API_BASE}?serviceKey=${env.APT_SERVICE_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=${PAGE_SIZE}&pageNo=${pageNo}`;
+      // User-Agent 헤더가 없으면 공공데이터포털 WAF가 요청을 차단(400 Request Blocked)하므로 필수로 지정
+      const apiRes = await fetch(apiUrl, {
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; excelzip-apt-review/1.0)" },
+      });
+      const xmlText = await apiRes.text();
+
+      const resultCode = matchTag(xmlText, "resultCode");
+      if (resultCode !== "000") {
+        const resultMsg = matchTag(xmlText, "resultMsg") || "알 수 없는 오류";
+        return jsonResponse({ error: `API 오류 (코드 ${resultCode}): ${resultMsg}` }, 502);
+      }
+
+      const pageItems = parseItems(xmlText);
+      items.push(...pageItems);
+      const totalCount = parseInt(matchTag(xmlText, "totalCount"), 10) || 0;
+      if (!pageItems.length || items.length >= totalCount) break;
+    }
   } catch (err) {
     return jsonResponse({ error: "실거래가 API 호출 실패", detail: String(err) }, 502);
-  }
-
-  const items = parseItems(xmlText);
-  const resultCode = matchTag(xmlText, "resultCode");
-
-  if (resultCode !== "000") {
-    const resultMsg = matchTag(xmlText, "resultMsg") || "알 수 없는 오류";
-    return jsonResponse({ error: `API 오류 (코드 ${resultCode}): ${resultMsg}` }, 502);
   }
 
   const payload = { lawdCd, dealYmd, count: items.length, items, cached: false };
@@ -67,7 +78,7 @@ export async function onRequestGet(context) {
     });
   }
 
-  return jsonResponse(payload);
+  return jsonResponse(payload, 200, BROWSER_CACHE_SECONDS);
 }
 
 // XML <item>...</item> 블록을 단순 정규식으로 파싱 (의존성 없이 Workers 런타임에서 동작)
@@ -95,14 +106,21 @@ function parseItems(xmlText) {
   });
 }
 
+const XML_ENTITIES = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'" };
+
+// 값은 XML 엔티티를 풀어 평문으로 돌려줌 (화면 쪽에서 escapeHtml로 다시 이스케이프하므로 이중 인코딩 방지)
 function matchTag(text, tag) {
   const m = text.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
-  return m ? m[1] : "";
+  return m ? m[1].replace(/&(amp|lt|gt|quot|apos);/g, (e) => XML_ENTITIES[e]) : "";
 }
 
-function jsonResponse(obj, status = 200) {
+// 오류 응답은 캐시하지 않음 (maxAge 0)
+function jsonResponse(obj, status = 200, maxAge = 0) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "cache-control": maxAge ? `public, max-age=${maxAge}` : "no-store",
+    },
   });
 }

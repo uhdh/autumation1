@@ -27,7 +27,16 @@ Microsoft Excel 스프레드시트 UI를 위장 껍데기로 사용하고, 실�
 npx wrangler pages dev . --binding APT_SERVICE_KEY=<your_key>
 ```
 
-또는 `index.html`을 브라우저에서 바로 열면 됩니다 (API 프록시 없이 UI만 확인).
+또는 `index.html`을 브라우저에서 바로 열면 됩니다 (API 프록시 없이 UI만 확인 — 노란 경고 표시줄과 함께 샘플 데이터가 표시됨).
+
+## 점검
+
+```bash
+# 백엔드 프록시(입력 검증·페이지 처리) — 상위 API는 가짜 fetch로 대체하므로 키 불필요
+node --test tests/apt-trade.test.mjs
+```
+
+화면 쪽 포맷·필터 함수는 주소 뒤에 `?selftest`를 붙여 열면 콘솔에 점검 결과가 찍힙니다.
 
 ## 배포 (Cloudflare Pages)
 
@@ -44,8 +53,16 @@ GET /api/apt-trade?lawdCd={5자리}&dealYmd={YYYYMM}
 
 | 파라미터 | 형식 | 예시 |
 |----------|------|------|
-| `lawdCd` | 5자리 숫자 | `11680` (강남구) |
+| `lawdCd` | 서울 법정동코드 5자리 (`11`로 시작) | `11680` (강남구) |
 | `dealYmd` | YYYYMM | `202605` |
+
+거래가 많은 구·월도 누락되지 않도록 상위 API의 `totalCount`에 닿을 때까지 페이지를 넘겨 전부 가져옵니다.
+
+```
+GET /api/apt-news?query={자치구} 부동산
+```
+
+네이버 뉴스 검색 프록시. `서울 부동산` 또는 `<서울 25개 자치구> 부동산`만 허용합니다 (환경 변수 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 필요).
 
 ## 세대수·준공년도 데이터
 
