@@ -4,6 +4,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { onRequestGet } from "../functions/api/apt-trade.js";
 
+const originalFetch = globalThis.fetch;
+test.afterEach(() => { globalThis.fetch = originalFetch; });
+
 const call = (qs, env = { APT_SERVICE_KEY: "k" }) =>
   onRequestGet({ request: new Request(`https://x.test/api/apt-trade?${qs}`), env });
 
@@ -41,4 +44,38 @@ test("상위 API 오류 코드는 502로 전달하고 캐시하지 않는다", a
   const res = await call("lawdCd=11680&dealYmd=202605");
   assert.equal(res.status, 502);
   assert.equal(res.headers.get("cache-control"), "no-store");
+});
+
+test("불완전한 페이지와 비정상 응답은 성공 처리하거나 캐시하지 않는다", async () => {
+  const cases = [
+    [page(["가"], 2), page([], 2)],
+    Array(10).fill(page(["가"], 11)),
+    [page(["가"], "")],
+    [page(["가"], "2oops")],
+    [page(["가"], 2), page(["나"], 3)],
+    [page(["가", "나"], 1)],
+    [new Response(page(["가"], 1), { status: 503 })],
+  ];
+  for (const pages of cases) {
+    let requested = 0;
+    globalThis.fetch = async () => {
+      assert.ok(requested < pages.length, "불필요한 추가 요청");
+      const body = pages[requested++];
+      return body instanceof Response ? body : new Response(body);
+    };
+    const res = await call("lawdCd=11680&dealYmd=202605", {
+      APT_SERVICE_KEY: "k",
+      APT_CACHE: { get: async () => null, put: async () => assert.fail("불완전한 응답 캐시 금지") },
+    });
+    assert.equal(res.status, 502);
+    assert.equal(res.headers.get("cache-control"), "no-store");
+    assert.equal(requested, pages.length);
+  }
+});
+
+test("정상적인 0건 응답은 빈 결과로 반환한다", async () => {
+  globalThis.fetch = async () => new Response(page([], 0));
+  const res = await call("lawdCd=11680&dealYmd=202605");
+  assert.equal(res.status, 200);
+  assert.deepEqual((await res.json()).items, []);
 });

@@ -463,6 +463,7 @@
 <div class="titlebar">
   <span class="icon">X</span>
   apt_review.xlsx - Excel
+  <a href="/buy.html" style="margin-left:auto;color:white;font-size:12px">우리집 찾기 ↗</a>
 </div>
 
 <div class="ribbon" id="ribbon">
@@ -549,7 +550,7 @@
   <button type="button" role="tab" aria-selected="false" data-sheet="news">뉴스</button>
 </div>
 
-<div class="disclaimer">단지 정보(연식·세대수)는 K-apt 2026-07-03 기준 · 초품아 표시는 비공식(나무위키) 정보 · 참고용이며 실제 거래 전 국토교통부 실거래가 공개시스템에서 확인하세요.</div>
+<div class="disclaimer">단지 정보(연식·세대수)는 K-apt 공개 스냅샷 기준 (자료 시점은 구매 화면 출처 참고) · 초품아 표시는 비공식(나무위키) 정보 · 참고용이며 실제 거래 전 국토교통부 실거래가 공개시스템에서 확인하세요.</div>
 <div class="status-bar">
   <span id="statusLeft">준비</span>
   <span id="statusRight">국토교통부 실거래가 공개시스템 · 네이버 뉴스 검색 API 기준</span>
@@ -614,7 +615,7 @@ let usingLiveData = false;
 let currentNews = [];
 let newsFailed = false; // 뉴스 조회 실패 시 지어낸 샘플 대신 "불러오지 못함"을 표시
 let currentTrendDatasets = null;
-let currentBasisByAptNm = new Map(); // aptNm → {householdCount, useApproveDate}
+let currentBasisByComplex = new Map(); // [동, 단지명] → {householdCount, buildYearMonth, isChopuma}
 
 // 억 단위, 소수점 첫째 자리까지 (예: 215000만원 → "21.5억")
 function fmtAmount(manwon){
@@ -646,7 +647,7 @@ function fmtPricePerPyeong(it){
 // 준공년도. 정적 단지 목록(seoul_apt_complex.json)의 사용승인일(년.월)을 우선하고, 없으면 실거래가 API의 buildYear
 // (화면 표시와 년식 필터가 같은 값을 보도록 한곳에서 구함)
 function getBuildYear(it){
-  const buildYearMonth = currentBasisByAptNm.get(it.aptNm)?.buildYearMonth;
+  const buildYearMonth = currentBasisByComplex.get(complexKey(it))?.buildYearMonth;
   return parseInt(buildYearMonth ? buildYearMonth.slice(0, 4) : it.buildYear, 10) || null;
 }
 
@@ -661,14 +662,14 @@ function fmtBuildYear(it){
 
 // 세대수. 공동주택 기본정보 API(apt-complex)에서 단지명 매칭으로 조회한 값
 function fmtHousehold(it){
-  const info = currentBasisByAptNm.get(it.aptNm);
+  const info = currentBasisByComplex.get(complexKey(it));
   if(!info || !info.householdCount) return "-";
   return `${info.householdCount.toLocaleString()}세대`;
 }
 
 // 초품아 뱃지. 나무위키 사용자 편집 목록 기반 비공식 정보라는 점을 title 툴팁으로 명시
 function fmtChopumaBadge(it){
-  const info = currentBasisByAptNm.get(it.aptNm);
+  const info = currentBasisByComplex.get(complexKey(it));
   if(!info || !info.isChopuma) return "";
   return `<span class="chopuma-badge" title="나무위키 '초품아' 문서 등재 사례 (사용자 편집 정보, 비공식)">초품아</span>`;
 }
@@ -818,7 +819,7 @@ function getFilteredItems(){
       if(!y || y > filterState.yearMax) return false;
     }
     if(filterState.householdMin != null){
-      const household = currentBasisByAptNm.get(it.aptNm)?.householdCount;
+      const household = currentBasisByComplex.get(complexKey(it))?.householdCount;
       if(!household || household < filterState.householdMin) return false;
     }
     if(filterState.priceMin != null){
@@ -1097,13 +1098,13 @@ async function loadAll(){
   ]);
   const failed = trade instanceof Error;
   const items = failed ? SAMPLE_ITEMS : trade;
-  const basis = await loadHouseholdCounts(items);
+  const basis = await loadHouseholdCounts(items, guName);
 
   // 기다리는 사이 지역·계약월이 또 바뀌었으면 늦게 도착한 이 결과는 버림
   if(seq !== loadSeq) return;
 
   usingLiveData = !failed;
-  currentBasisByAptNm = basis;
+  currentBasisByComplex = basis;
   // 샘플은 단지 목록 매칭 여부와 무관하게 그대로 보여줌 (index.html만 단독으로 열어도 화면이 비지 않도록)
   currentItems = failed ? items : filterMandatoryManaged(items, basis);
   currentTrendDatasets = failed ? null : [prev2, prev1, items].map(monthItems => ({ items: monthItems }));
@@ -1211,25 +1212,24 @@ async function loadSeoulComplexList(){
 }
 
 // RTMS 실거래가의 aptNm(+umdNm)을 정적 단지 목록의 kaptName(+dong)과 매칭
-// 완전일치 중 같은 동(dong)인 것을 최우선으로, 없으면 완전일치 첫 건, 그래도 없으면 부분포함으로 매칭
-function matchSeoulComplex(aptNm, umdNm){
+// 같은 구·동에서만 찾고, 후보가 여러 개면 잘못된 정보를 붙이지 않도록 매칭하지 않는다.
+function matchSeoulComplex(aptNm, umdNm, guName){
   if(!seoulComplexByName) return null;
   const target = normalizeAptName(aptNm);
   if(!target) return null;
 
-  const exact = seoulComplexByName.get(target);
-  if(exact && exact.length){
-    const sameDong = exact.find(c => c.dong === umdNm);
-    return sameDong || exact[0];
-  }
+  const inArea = c => c.gu === guName && c.dong === umdNm;
+  const exact = (seoulComplexByName.get(target) || []).filter(inArea);
+  if(exact.length) return exact.length === 1 ? exact[0] : null;
 
   let fallback = null;
   for(const c of seoulComplexList){
+    if(!inArea(c)) continue;
     const cand = normalizeAptName(c.kaptName);
     if(!cand) continue;
     if(cand.includes(target) || target.includes(cand)){
+      if(fallback) return null;
       fallback = c;
-      if(c.dong === umdNm) break; // 같은 동이면 더 볼 것 없이 채택
     }
   }
   return fallback;
@@ -1251,16 +1251,19 @@ async function loadChopumaSet(){
   return chopumaKaptCodes;
 }
 
-// currentItems에 등장하는 단지들의 세대수·초품아 여부를 정적 목록에서 매칭해 aptNm → 기본정보 맵으로 구성
-async function loadHouseholdCounts(items){
+function complexKey(it){
+  return JSON.stringify([it.umdNm, it.aptNm]);
+}
+
+// 조회된 구 안에서도 동이 다른 동명 단지는 별도로 보관한다.
+async function loadHouseholdCounts(items, guName){
   await loadSeoulComplexList();
   await loadChopumaSet();
   const map = new Map();
-  const uniqueNames = Array.from(new Set(items.map(it => it.aptNm)));
-  uniqueNames.forEach(aptNm=>{
-    const it = items.find(i => i.aptNm === aptNm);
-    const match = matchSeoulComplex(aptNm, it?.umdNm);
-    if(match) map.set(aptNm, {
+  const uniqueItems = new Map(items.map(it => [complexKey(it), it]));
+  uniqueItems.forEach((it, key)=>{
+    const match = matchSeoulComplex(it.aptNm, it.umdNm, guName);
+    if(match) map.set(key, {
       householdCount: match.householdCount,
       buildYearMonth: match.buildYearMonth,
       isChopuma: chopumaKaptCodes.has(match.kaptCode),
@@ -1272,7 +1275,7 @@ async function loadHouseholdCounts(items){
 // K-apt 단지 목록(seoul_apt_complex.json)은 의무관리대상 공동주택만 포함하므로,
 // 여기에 매칭되지 않는 단지(의무관리 대상 아님·소규모·오피스텔 등)는 화면에서도 제외
 function filterMandatoryManaged(items, basisMap){
-  return items.filter(it => basisMap.has(it.aptNm));
+  return items.filter(it => basisMap.has(complexKey(it)));
 }
 
 // 선택된 구 이름 기준으로 부동산 뉴스 조회 (예: "강남구 부동산"). 실패 시 null
@@ -1431,12 +1434,12 @@ function selfCheck(){
   eq(fillerRows(0, 3, "없음").split("<tr>").length - 1, 8, "fillerRows 0건: 안내 1행 + 빈 7행");
   eq(fillerRows(10, 3, "없음"), "", "fillerRows 8건 이상");
 
-  const saved = [currentItems, filterState, currentBasisByAptNm];
+  const saved = [currentItems, filterState, currentBasisByComplex];
   currentItems = SAMPLE_ITEMS;
-  currentBasisByAptNm = new Map();
+  currentBasisByComplex = new Map();
   filterState = { yearMin:2000, yearMax:null, householdMin:null, priceMin:25, priceMax:null };
   eq(getFilteredItems().map(it => it.aptNm).join(), "개포래미안포레스트,삼성동중앙하이츠빌리지,개포더샵트리에", "getFilteredItems 년식+금액");
-  [currentItems, filterState, currentBasisByAptNm] = saved;
+  [currentItems, filterState, currentBasisByComplex] = saved;
   console.log("selftest 완료");
 }
 if(location.search.includes("selftest")) selfCheck();

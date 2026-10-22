@@ -33,7 +33,7 @@ export async function onRequestGet(context) {
     return jsonResponse({ error: "실거래가 API 키(APT_SERVICE_KEY)가 설정되지 않았습니다." }, 500);
   }
 
-  const cacheKey = `apt:${lawdCd}:${dealYmd}`;
+  const cacheKey = `apt:v2:${lawdCd}:${dealYmd}`;
 
   // 1. KV 캐시 확인 (바인딩이 없으면 건너뜀)
   if (env.APT_CACHE) {
@@ -45,6 +45,7 @@ export async function onRequestGet(context) {
 
   // 2. 공공데이터포털 API 호출 — 거래가 많은 구·월은 한 페이지에 다 안 들어오므로 totalCount에 닿을 때까지 페이지를 넘김
   const items = [];
+  let totalCount = null;
   try {
     for (let pageNo = 1; pageNo <= MAX_PAGES; pageNo++) {
       const apiUrl = `${API_BASE}?serviceKey=${env.APT_SERVICE_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=${PAGE_SIZE}&pageNo=${pageNo}`;
@@ -53,6 +54,9 @@ export async function onRequestGet(context) {
         headers: { "User-Agent": "Mozilla/5.0 (compatible; excelzip-apt-review/1.0)" },
       });
       const xmlText = await apiRes.text();
+      if (!apiRes.ok) {
+        return jsonResponse({ error: `실거래가 API HTTP 오류 (${apiRes.status})` }, 502);
+      }
 
       const resultCode = matchTag(xmlText, "resultCode");
       if (resultCode !== "000") {
@@ -62,11 +66,20 @@ export async function onRequestGet(context) {
 
       const pageItems = parseItems(xmlText);
       items.push(...pageItems);
-      const totalCount = parseInt(matchTag(xmlText, "totalCount"), 10) || 0;
+      const countText = matchTag(xmlText, "totalCount").trim();
+      const pageTotal = /^\d+$/.test(countText) ? Number(countText) : NaN;
+      if (!Number.isSafeInteger(pageTotal) || (totalCount !== null && totalCount !== pageTotal)) {
+        return jsonResponse({ error: "실거래가 API의 전체 건수가 누락되거나 변경되었습니다. 다시 조회해 주세요." }, 502);
+      }
+      totalCount = pageTotal;
       if (!pageItems.length || items.length >= totalCount) break;
     }
   } catch (err) {
     return jsonResponse({ error: "실거래가 API 호출 실패", detail: String(err) }, 502);
+  }
+
+  if (items.length !== totalCount) {
+    return jsonResponse({ error: "전체 거래를 가져오지 못했습니다. 다시 조회해 주세요." }, 502);
   }
 
   const payload = { lawdCd, dealYmd, count: items.length, items, cached: false };

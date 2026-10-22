@@ -2,4 +2,8 @@
 .dev.vars.*
 .wrangler/
 node_modules/
+.data-cache/
+dist/
+release-evidence/
+wrangler.toml
 참고문서/*.xlsx

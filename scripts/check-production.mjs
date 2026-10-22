@@ -1,0 +1,8 @@
+import { execFileSync } from 'node:child_process';
+const expected = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+for (let attempt = 0; attempt < 40; attempt++) {
+  const release = await fetch(`https://excelzip.pages.dev/release.json?t=${Date.now()}`).then(r => r.json()).catch(() => null);
+  if (release?.commit === expected) { console.log(`Production verified: ${expected}`); process.exit(0); }
+  await new Promise(resolve => setTimeout(resolve, 15000));
+}
+throw new Error('Production did not reach the committed snapshot within 10 minutes');
