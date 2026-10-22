@@ -1,5 +1,8 @@
 name: Refresh public apartment data
 on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/refresh-data.yml']
   schedule:
     - cron: '17 21 * * *'
   workflow_dispatch:
