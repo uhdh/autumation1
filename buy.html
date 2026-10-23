@@ -5,9 +5,7 @@
   <meta name="description" content="예산과 가족의 생활 동선을 함께 비교하는 서울 아파트 구매 노트">
   <title>우리집 찾기 · 엑셀아파트</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231b5145'/%3E%3Ctext x='7' y='23' fill='white' font-size='23'%3E집%3C/text%3E%3C/svg%3E">
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="buyer.css">
-  <script defer src="vendor/leaflet/leaflet.js"></script>
   <script type="module" src="buyer.js"></script>
 </head>
 <body>
@@ -79,7 +77,7 @@
         <p class="hint">조건은 모두 함께 적용합니다. 세대수는 K-apt 자료, 초품아는 비공식 참고목록 기준이며 통학구역 확인이 필요합니다. 역세권은 9호선·신분당선·코레일 등을 포함한 수도권 역 중심까지 직선거리입니다. 실제 출입구·도보 경로와 다릅니다. 해당 조건 정보가 없는 단지는 제외합니다. <a href="https://schoolzone.emac.kr/">공식 통학구역 확인 ↗</a></p>
         <p id="map-status" class="hint" role="status">지도를 불러오는 중입니다.</p>
         <p id="map-error" class="hint" hidden>배경 지도를 불러오지 못했습니다. 연결을 확인하거나 후보 목록을 이용하세요.</p>
-        <p class="map-source">좌표: <a href="https://data.seoul.go.kr/dataList/OA-15818/A/1/datasetView.do" target="_blank" rel="noopener">서울특별시 공동주택 아파트 정보</a> · <span id="place-date">수집일 확인 중</span> · 공공누리 제1유형<br>구·동·지번과 준공연도를 확인해 공식 단지코드로 좌표를 연결합니다. 주소가 모호하거나 재건축 연도가 다른 단지는 제외합니다. 지도 배경은 OpenStreetMap에서 불러옵니다.</p>
+        <p class="map-source">좌표: <a href="https://data.seoul.go.kr/dataList/OA-15818/A/1/datasetView.do" target="_blank" rel="noopener">서울특별시 공동주택 아파트 정보</a> · <span id="place-date">수집일 확인 중</span> · 공공누리 제1유형<br>구·동·지번과 준공연도를 확인해 공식 단지코드로 좌표를 연결합니다. 주소가 모호하거나 재건축 연도가 다른 단지는 제외합니다. 지도 배경은 카카오맵에서 불러옵니다.</p>
       </section>
       <div id="candidate-list"><div class="empty-state"><h3>예산 버튼 하나로 시작해보세요.</h3><p>복잡한 대출 정보나 주소는 지금 필요 없어요.</p></div></div>
       <button type="button" id="more-results" class="secondary full" hidden>후보 더 보기</button>

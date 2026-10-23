@@ -93,7 +93,7 @@ MIT
 
 ### 구매 화면 지도
 
-`buy.html`은 Leaflet 1.9.4와 OpenStreetMap 배경 지도를 사용한다. Leaflet 배포 파일과 BSD-2-Clause 고지는 `vendor/leaflet/`에 포함되어 있다. 타일은 브라우저 기본 캐시를 사용하며 오프라인 저장·일괄 다운로드를 제공하지 않는다.
+`buy.html`은 카카오맵 Web SDK를 사용한다. `bike_map`과 같은 카카오 앱의 브라우저 공개 JavaScript 키를 사용하며 무료 쿼터를 공유한다. 허용 도메인은 카카오 개발자 콘솔에서 관리한다: `https://excelzip.pages.dev`, `https://release-buyer.excelzip.pages.dev`, `http://127.0.0.1:8789`. 다른 배포 주소는 SDK 도메인 등록이 필요하다. REST/어드민 키는 프런트엔드에 넣지 않는다. SDK 공식 문서: https://apis.map.kakao.com/web/documentation/ .
 
 좌표는 [서울특별시 공동주택 아파트 정보](https://data.seoul.go.kr/dataList/OA-15818/A/1/datasetView.do)의 공개 JSON 내려받기 자료를 2026-10-22에 가공한 `seoul_apt_locations.json`이다. 공공누리 제1유형(출처 표시) 자료이며, 원본 2,894행에서 사용 중인 단지의 유효 서울 범위 좌표 2,854행만 추렸다. 단지코드·이름·구·동·도로명주소·좌표만 보관한다. 갱신 시 원본 화면의 JSON 내려받기로 다시 받아 동일 필드를 추출한다.
 

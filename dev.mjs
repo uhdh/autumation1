@@ -1,7 +1,7 @@
 // 로컬 화면 확인: node dev.mjs (거래·뉴스는 공개 배포 API 사용, 로컬 Functions 검증은 node --test)
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
-const publicFiles = new Set(['index.html', 'buy.html', 'about.html', 'privacy.html', 'station-data.json', 'buyer.js', 'buyer-filters.js', 'buyer-core.js', 'buyer.css', 'buyer-insights.js', 'market-core.js', 'market-data.json', 'rail-data.json', 'buyer-map.js', 'seoul_apt_locations.json', 'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.css', 'seoul_lawd_codes.json', 'seoul_apt_complex.json', 'seoul_chopuma.json']);
+const publicFiles = new Set(['index.html', 'buy.html', 'about.html', 'privacy.html', 'station-data.json', 'buyer.js', 'buyer-filters.js', 'buyer-core.js', 'buyer.css', 'buyer-insights.js', 'market-core.js', 'market-data.json', 'rail-data.json', 'buyer-map.js', 'seoul_apt_locations.json', 'seoul_lawd_codes.json', 'seoul_apt_complex.json', 'seoul_chopuma.json']);
 const mime = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8', json: 'application/json; charset=utf-8' };
 http.createServer(async (req, res) => {
   try {
