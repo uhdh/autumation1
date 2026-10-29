@@ -14,6 +14,10 @@
 <main id="main">
   <section class="intro"><p class="eyebrow">우리 가족의 다음 집</p><h1>이 예산이면, 어디 살 수 있을까?</h1><p>대출 6억과 내 돈 4억으로, 서울 전체에서 찾아보세요.</p></section>
   <a class="compare-shortcut" id="compare-shortcut" href="#comparison" hidden>담아둔 집 비교 <span id="compare-count">0/3</span> ↓</a>
+  <div class="explore-tabs" role="tablist" aria-label="집 찾는 방식">
+    <button id="tab-map" type="button" role="tab" aria-selected="true" aria-controls="map-view">지도에서 찾기</button>
+    <button id="tab-subway" type="button" role="tab" aria-selected="false" aria-controls="subway-panel" tabindex="-1">지하철로 찾기</button>
+  </div>
   <div class="workspace">
   <aside id="conditions" class="conditions">
     <form id="profile-form">
@@ -65,19 +69,38 @@
       </details>
       <details class="metric-method"><summary>지표 계산 기준·자료 출처</summary><p>매매 지표는 중개거래·5층 이상만 사용합니다. 전세가율은 최근 6개월 중 공통 거래 월의 평균 전세금/평균 매매가입니다. 전세는 월세 0인 신고자료이며 갱신계약을 포함합니다. 원본에 취소 식별 필드가 없어 전세의 취소 여부는 별도 검증하지 못했습니다.</p><p>상승률은 완료된 3개월 구간의 최고가를 비교하며 양쪽 각각 2건 이상이어야 합니다. 상대평가는 2024년 또는 2025년 4분기 기준 자체 비교로, 2020~2022년 전고점 분석이 아닙니다. 세대수 제한 없이 서울 동일 지번·단지명·면적 정수㎡로 집계합니다. 자료 부족은 0%·0점으로 대체하지 않습니다.</p><p>출처: <a href="https://data.seoul.go.kr/dataList/OA-21275/S/1/datasetView.do">서울시 매매</a> · <a href="https://data.seoul.go.kr/dataList/OA-21276/S/1/datasetView.do">서울시 전월세</a> · <a href="https://data.seoul.go.kr/dataList/OA-12034/F/1/datasetView.do">서울교통공사 역간시간</a> · <a href="https://data.seoul.go.kr/dataList/OA-22534/L/1/datasetView.do">역 좌표</a> · 공공누리 제1유형 출처표시</p></details>
       <section id="map-panel" class="map-panel" aria-label="후보 아파트 지도">
-        <div class="section-heading"><h3>지도에서 둘러보기</h3><button type="button" id="map-fit" class="secondary">후보 전체 보기</button></div>
-        <fieldset id="property-controls" disabled><legend>조건을 추가하면 지도에서 바로 좁혀져요</legend><div class="property-grid">
+        <div class="section-heading"><h3 id="explore-heading">지도에서 둘러보기</h3><button type="button" id="map-fit" class="secondary">후보 전체 보기</button></div>
+        <fieldset id="property-controls" disabled><legend>조건을 추가하면 후보가 바로 좁혀져요</legend><div class="property-grid">
           <div><label class="checkbox"><input id="filter-large" type="checkbox">대단지</label><select id="filter-households" aria-label="최소 세대수" disabled><option value="500">500세대 이상</option><option value="1000" selected>1,000세대 이상</option><option value="1500">1,500세대 이상</option><option value="2000">2,000세대 이상</option></select></div>
           <div><label class="checkbox"><input id="filter-school" type="checkbox">초품아 참고</label><small>비공식 참고목록 등재 단지</small></div>
           <div><label class="checkbox"><input id="filter-station" type="checkbox">역세권</label><select id="filter-station-m" aria-label="역까지 직선거리" disabled><option value="300">역 300m 이내</option><option value="500" selected>역 500m 이내</option><option value="800">역 800m 이내</option><option value="1000">역 1km 이내</option></select></div>
           <label>연식<select id="filter-age"><option value="">전체</option><option value="5">5년 이내</option><option value="10">10년 이내</option><option value="15">15년 이내</option><option value="20">20년 이내</option><option value="30">30년 이내</option></select></label>
         </div></fieldset>
         <div class="property-footer"><p id="property-summary" class="hint" role="status">단지 조건 자료를 불러오는 중입니다.</p><button type="button" id="reset-property-filters" class="text-button" disabled>단지 조건 해제</button></div><div id="active-property-filters"></div>
+        <div id="map-view" role="tabpanel" aria-labelledby="tab-map">
         <div id="candidate-map" aria-label="서울 아파트 위치 지도"></div>
         <p class="hint">조건은 모두 함께 적용합니다. 세대수는 K-apt 자료, 초품아는 비공식 참고목록 기준이며 통학구역 확인이 필요합니다. 역세권은 9호선·신분당선·코레일 등을 포함한 수도권 역 중심까지 직선거리입니다. 실제 출입구·도보 경로와 다릅니다. 해당 조건 정보가 없는 단지는 제외합니다. <a href="https://schoolzone.emac.kr/">공식 통학구역 확인 ↗</a></p>
         <p id="map-status" class="hint" role="status">지도를 불러오는 중입니다.</p>
         <p id="map-error" class="hint" hidden>배경 지도를 불러오지 못했습니다. 연결을 확인하거나 후보 목록을 이용하세요.</p>
         <p class="map-source">좌표: <a href="https://data.seoul.go.kr/dataList/OA-15818/A/1/datasetView.do" target="_blank" rel="noopener">서울특별시 공동주택 아파트 정보</a> · <span id="place-date">수집일 확인 중</span> · 공공누리 제1유형<br>구·동·지번과 준공연도를 확인해 공식 단지코드로 좌표를 연결합니다. 주소가 모호하거나 재건축 연도가 다른 단지는 제외합니다. 지도 배경은 카카오맵에서 불러옵니다.</p>
+        </div>
+        <section id="subway-panel" role="tabpanel" aria-labelledby="tab-subway" hidden>
+          <p class="subway-intro">어느 역 가까이 살고 싶나요?</p>
+          <p class="hint">노선과 역을 고르면 지금 예산·조건에 맞는 주변 아파트를 보여드려요.</p>
+          <fieldset id="subway-controls" disabled>
+            <legend class="sr-only">지하철역 탐색 조건</legend>
+            <div class="subway-fields">
+              <label>역 이름 검색<input id="subway-search" type="search" placeholder="강남, ㄱㄴ으로 검색" autocomplete="off"></label>
+              <label>역 주변 범위<select id="subway-radius"><option value="300">직선 300m</option><option value="500" selected>직선 500m</option><option value="800">직선 800m</option><option value="1000">직선 1km</option></select></label>
+            </div>
+            <div id="subway-lines" class="subway-lines" aria-label="노선 선택"></div>
+          </fieldset>
+          <p id="subway-status" class="hint" role="status">역 정보를 불러오는 중입니다.</p>
+          <button id="subway-clear" class="text-button" type="button" hidden>역 선택 해제</button>
+          <div id="subway-stations" class="subway-stations"></div>
+          <button id="subway-more" type="button" class="secondary full" hidden>역 더 보기</button>
+          <p class="hint">역 중심까지의 직선거리이며 실제 출입구·도보 시간과 다릅니다. 가격은 현재 조건에 맞는 단지·면적별 실거래 중앙값 중 최솟값입니다. 같은 아파트가 여러 역에 포함될 수 있습니다. 거래 자료는 서울 아파트에 한정됩니다.</p>
+        </section>
       </section>
       <div id="candidate-list"><div class="empty-state"><h3>예산 버튼 하나로 시작해보세요.</h3><p>복잡한 대출 정보나 주소는 지금 필요 없어요.</p></div></div>
       <button type="button" id="more-results" class="secondary full" hidden>후보 더 보기</button>

@@ -1,3 +1,4 @@
+import { initSubway, updateSubway, resetSubway, activateExploreTab, subwaySelectionLabel } from './buyer-subway.js';
 import { initPropertyFilters, resetPropertyFilters, passesProperties, propertyFiltersActive, propertyBadges, renderPropertySummary } from './buyer-filters.js';
 import { resetInsights, loadMarket, metricFor, insightHTML, showAnalysis, initInsights, fitsCommute, commuteActive, routesFor, growthInterval } from './buyer-insights.js';
 import { initMap, updateMap, hasLocation, showOnMap } from './buyer-map.js';
@@ -66,8 +67,9 @@ function renderResults() {
   const inBudget = areaMatches.filter(g => validRange && g.price >= lower * 10000 && g.price <= budget);
   const budgetMatches = $('include-over').checked ? areaMatches.filter(g => validRange && g.price >= lower * 10000) : inBudget;
   const commuteMatches = budgetMatches.filter(fitsCommute);
-  const result = commuteMatches.filter(passesProperties);
-  renderPropertySummary(commuteMatches, result);
+  const propertyMatches = commuteMatches.filter(passesProperties);
+  renderPropertySummary(commuteMatches, propertyMatches);
+  const result = updateSubway(propertyMatches);
   const sort = $('sort').value;
   const metric = g => sort === 'jeonse' ? metricFor(g)?.jeonse?.pct : sort === 'growth' ? metricFor(g)?.growth[growthInterval()]?.pct : metricFor(g)?.valuation?.score;
   result.sort((a, b) => ['jeonse', 'growth', 'value'].includes(sort) ? (metric(b) ?? -Infinity) - (metric(a) ?? -Infinity) : sort === 'commute' && commuteActive() ? Math.max(...routesFor(a).map(r => Math.max(r.out.minutes, r.back.minutes))) - Math.max(...routesFor(b).map(r => Math.max(r.out.minutes, r.back.minutes))) : sort === 'fit' && budget !== null ? Math.abs(a.price - budget) - Math.abs(b.price - budget) : sort === 'recent' ? b.trades[0].date.localeCompare(a.trades[0].date) : sort === 'count' ? b.count - a.count : a.price - b.price);
@@ -91,8 +93,9 @@ function renderResults() {
   const changed = p.district !== query.district || Number(p.period) !== query.months.length;
   $('search-status').className = `status${query.failed.length ? ' error' : ''}`;
   $('search-status').textContent = `${query.gu} · ${query.months.at(-1)}~${query.months[0]} · ${groups.length}개 단지·면적 중 예산·면적 조건 ${inBudget.length}개${query.loading ? ` · ${query.done}/${query.total}개 구·월 조회 중` : ''}${missing}${query.snapshot ? ` · 서울시 ${query.snapshot} 수집 자료` : ''}${commuteActive() ? ` · 이동조건 충족 ${commuteMatches.length}개 / 시간 초과·미확인 ${budgetMatches.length - commuteMatches.length}개` : ''}${changed ? ' · 지역/기간 변경은 후보 찾기를 눌러 적용하세요.' : ''}`;
+  if (subwaySelectionLabel()) $('search-status').textContent += ` · ${subwaySelectionLabel()} · ${result.length}개 단지·면적`;
   if (!result.length) {
-    $('candidate-list').innerHTML = query.loading ? '<div class="empty-state"><h3>예산에 맞는 집을 찾고 있어요.</h3><p>조회된 지역부터 차례로 보여드릴게요.</p></div>' : `<div class="empty-state"><h3>${groups.length ? '지금 조건에 맞는 후보가 없어요.' : '표시할 거래가 없습니다.'}</h3><p>${!groups.length ? '조회 기간이나 지역을 바꿔보세요. 오류가 표시됐다면 다시 조회할 수 있습니다.' : !validRange ? '최소·최대 가격 범위를 확인해 주세요.' : propertyFiltersActive() ? '단지 조건을 해제하거나 기준을 넓혀보세요. 조건 정보 미확인 단지도 제외됩니다.' : commuteActive() && inBudget.length ? '예산에 맞는 후보는 있지만 이동시간 상한을 넘거나 위치·경로를 확인할 수 없습니다. 역 선택을 해제하거나 시간을 늘려보세요.' : budget === null ? '집값 예산을 먼저 입력해주세요.' : `면적 조건에 맞는 후보 ${areaMatches.length}개 중 예산 안의 후보는 ${inBudget.length}개입니다.<br>예산 초과 후보를 확인하거나 면적 범위를 넓혀보세요.`}</p></div>`;
+    $('candidate-list').innerHTML = query.loading ? '<div class="empty-state"><h3>예산에 맞는 집을 찾고 있어요.</h3><p>조회된 지역부터 차례로 보여드릴게요.</p></div>' : `<div class="empty-state"><h3>${groups.length ? '지금 조건에 맞는 후보가 없어요.' : '표시할 거래가 없습니다.'}</h3><p>${!groups.length ? '조회 기간이나 지역을 바꿔보세요. 오류가 표시됐다면 다시 조회할 수 있습니다.' : !validRange ? '최소·최대 가격 범위를 확인해 주세요.' : subwaySelectionLabel() ? '선택한 역 주변에 현재 조건을 만족하는 후보가 없습니다. 역 선택을 해제하거나 범위·예산을 넓혀보세요.' : propertyFiltersActive() ? '단지 조건을 해제하거나 기준을 넓혀보세요. 조건 정보 미확인 단지도 제외됩니다.' : commuteActive() && inBudget.length ? '예산에 맞는 후보는 있지만 이동시간 상한을 넘거나 위치·경로를 확인할 수 없습니다. 역 선택을 해제하거나 시간을 늘려보세요.' : budget === null ? '집값 예산을 먼저 입력해주세요.' : `면적 조건에 맞는 후보 ${areaMatches.length}개 중 예산 안의 후보는 ${inBudget.length}개입니다.<br>예산 초과 후보를 확인하거나 면적 범위를 넓혀보세요.`}</p></div>`;
   } else {
     $('candidate-list').innerHTML = result.slice(0, visibleCount).map(g => {
       const picked = selected.some(s => s.id === g.id), headroom = budget === null ? null : budget - g.price;
@@ -215,7 +218,7 @@ document.addEventListener('click', event => {
   const analysis = event.target.closest('[data-analysis]');
   if (analysis) { const g = groups.find(g => g.id === analysis.dataset.analysis); if (g) showAnalysis(g); }
   const mapButton = event.target.closest('[data-map]');
-  if (mapButton) showOnMap(mapButton.dataset.map);
+  if (mapButton) { activateExploreTab('map'); showOnMap(mapButton.dataset.map); }
   const opener = event.target.closest('[data-open]');
   if (opener) $(opener.dataset.open).showModal();
   const closer = event.target.closest('[data-close]');
@@ -285,7 +288,7 @@ $('reset').addEventListener('click', () => {
   searchSeq++; form.reset(); $('remember').checked = false;
   $('custom-budget').setAttribute('aria-expanded', 'false');
   destinations = defaults.map(([id, name]) => ({ id, name, place: '', mode: '대중교통', visits: '', limit: '', required: false }));
-  selected = []; notes = {}; groups = []; query = null; $('sort').value = 'fit'; $('include-over').checked = false; resetInsights(); resetPropertyFilters(); renderPropertySummary([], []); updateMap([], () => {});
+  selected = []; notes = {}; groups = []; query = null; $('sort').value = 'fit'; $('include-over').checked = false; resetInsights(); resetPropertyFilters(); resetSubway(); renderPropertySummary([], []); updateMap([], () => {});
   $('search-button').disabled = false; $('search-button').innerHTML = '집 찾아보기 →';
   $('candidate-list').classList.remove('busy'); $('candidate-list').innerHTML = '<div class="empty-state"><h3>입력을 모두 지웠습니다.</h3><p>새 조건으로 집 찾기를 시작할 수 있습니다.</p></div>';
   $('search-status').textContent = '조건을 입력하면 실제 거래가 있는 단지·면적을 찾아드립니다.';
@@ -340,6 +343,7 @@ async function init() {
   updateBudget(); renderDestinations(); renderComparison();
   if (form.elements.district.value && form.checkValidity() && budgetOf(profile()) > 0) search({ preventDefault() {}, auto: true });
 }
+initSubway(renderResults);
 initPropertyFilters(renderResults);
 initMap(renderResults);
 initInsights(renderResults);
